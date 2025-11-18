@@ -1,0 +1,1442 @@
+<!--
+MemoryMate: a smart reminder/task assistant web app
+Built as a single‑file HTML/CSS/JS application.
+
+This app is designed to be fully functional when loaded in a browser.
+All data (tasks, categories, settings) is persisted to localStorage.
+
+Features implemented:
+  • Add, edit, delete tasks with title, description, date, time, category, repeat type, priority and nag type.
+  • Mark tasks complete and generate recurring tasks.
+  • Overdue detection, smart nagging with in‑app reminder notifications and snooze options.
+  • Subtasks per task with completion tracking.
+  • Views: Today, All Tasks, Category, Weekly Review, Settings.
+  • End‑of‑day summary at user’s configured time with rescheduling of incomplete tasks.
+  • Mobile‑first responsive design with bottom navigation bar.
+  • Dark/Light theme toggle.
+
+To use: copy this entire file into a .html file and open in a modern browser.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MemoryMate</title>
+  <style>
+    /* Global CSS variables for themes */
+    :root {
+      --bg-color: #f8f8f8;
+      --card-bg: #ffffff;
+      --text-color: #222222;
+      --muted-color: #777777;
+      --primary-color: #4A90E2;
+      --danger-color: #E94E77;
+      --success-color: #50E3C2;
+      --warning-color: #F5A623;
+      --nav-bg: #ffffff;
+      --nav-text: #555555;
+      --modal-overlay: rgba(0,0,0,0.4);
+    }
+    .dark {
+      --bg-color: #1f1f1f;
+      --card-bg: #2c2c2c;
+      --text-color: #f5f5f5;
+      --muted-color: #aaaaaa;
+      --primary-color: #5B9BD5;
+      --danger-color: #D96C79;
+      --success-color: #6BC1A7;
+      --warning-color: #D39E47;
+      --nav-bg: #2c2c2c;
+      --nav-text: #dddddd;
+      --modal-overlay: rgba(0,0,0,0.7);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      height: 100%;
+    }
+    body {
+      font-family: sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    /* Main container occupies available space minus bottom nav */
+    #app {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 60px; /* Space for nav */
+    }
+
+    /* Navigation bar */
+    nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background: var(--nav-bg);
+      border-top: 1px solid rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 100;
+    }
+    nav button {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--nav-text);
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    nav button.active {
+      color: var(--primary-color);
+    }
+    nav svg {
+      width: 20px;
+      height: 20px;
+      margin-bottom: 4px;
+      fill: currentColor;
+    }
+
+    /* Section views */
+    section.view {
+      display: none;
+      padding: 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    section.view.active {
+      display: block;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Task cards */
+    .task-card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      transition: transform 0.2s;
+    }
+    .task-card:hover {
+      transform: translateY(-2px);
+    }
+    .task-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      margin-top: 4px;
+    }
+    .task-content {
+      flex: 1;
+    }
+    .task-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .task-meta {
+      font-size: 11px;
+      color: var(--muted-color);
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .priority-low { color: var(--success-color); }
+    .priority-medium { color: var(--warning-color); }
+    .priority-high { color: var(--danger-color); }
+    .overdue {
+      border-left: 4px solid var(--danger-color);
+      padding-left: 8px;
+    }
+
+    /* Headings */
+    h1 {
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+    h2 {
+      font-size: 18px;
+      margin-top: 24px;
+      margin-bottom: 8px;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-primary {
+      background: var(--primary-color);
+      color: #fff;
+    }
+    .btn-danger {
+      background: var(--danger-color);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #e0e0e0;
+      color: #333;
+    }
+    .dark .btn-secondary {
+      background: #444;
+      color: #fff;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Inputs */
+    .input-group {
+      margin-bottom: 12px;
+    }
+    .input-group label {
+      font-size: 12px;
+      color: var(--muted-color);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .input-group input,
+    .input-group select,
+    .input-group textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      background: var(--card-bg);
+      color: var(--text-color);
+    }
+    .input-group textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    /* Modal overlay */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--modal-overlay);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 400px;
+      max-height: 90%;
+      overflow-y: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Reminder toast */
+    #reminder-toast {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary-color);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      display: none;
+      z-index: 300;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    #reminder-toast button {
+      margin-left: 12px;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    /* Subtasks list */
+    .subtasks-list {
+      margin-top: 8px;
+    }
+    .subtasks-list .subtask-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    .subtasks-list .subtask-item input {
+      margin-right: 8px;
+    }
+
+    /* Category badges */
+    .category-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      color: #fff;
+      margin-left: 4px;
+    }
+
+    /* Settings toggle */
+    .toggle {
+      position: relative;
+      width: 40px;
+      height: 20px;
+      background: #ccc;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+    .toggle:before {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      top: 1px;
+      left: 1px;
+      transition: transform 0.2s;
+    }
+    .toggle.active {
+      background: var(--primary-color);
+    }
+    .toggle.active:before {
+      transform: translateX(20px);
+    }
+
+    /* Media queries */
+    @media(min-width: 600px) {
+      #app {
+        padding-bottom: 0;
+      }
+      nav {
+        position: relative;
+        height: 50px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="reminder-toast"></div>
+  <div id="app">
+    <!-- Today View -->
+    <section id="today-view" class="view active">
+      <h1>Today</h1>
+      <div id="today-tasks"></div>
+    </section>
+    <!-- All Tasks View -->
+    <section id="all-view" class="view">
+      <h1>All Tasks</h1>
+      <button id="goto-category-view" class="btn btn-secondary" style="margin-bottom:12px;">View by Category</button>
+      <div class="input-group">
+        <input type="text" id="search-input" placeholder="Search tasks...">
+      </div>
+      <div class="input-group">
+        <select id="filter-category">
+          <option value="">All Categories</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <select id="filter-priority">
+          <option value="">All Priorities</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+      <div id="all-tasks"></div>
+    </section>
+    <!-- Category View -->
+    <section id="category-view" class="view">
+      <h1 style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Categories</span>
+        <button id="back-to-all" class="btn btn-secondary" style="font-size:12px;padding:4px 8px;">Back</button>
+      </h1>
+      <div id="category-list"></div>
+    </section>
+    <!-- Weekly Review View -->
+    <section id="weekly-view" class="view">
+      <h1>Weekly Review</h1>
+      <div id="weekly-completed"></div>
+      <div id="weekly-overdue"></div>
+      <div id="weekly-upcoming"></div>
+    </section>
+    <!-- Settings View -->
+    <section id="settings-view" class="view">
+      <h1>Settings</h1>
+      <div class="input-group">
+        <label for="summary-time">Daily Summary Time</label>
+        <input type="time" id="summary-time">
+      </div>
+      <div class="input-group">
+        <label>Theme</label>
+        <div id="theme-toggle" class="toggle"></div>
+      </div>
+      <h2>Categories</h2>
+      <div id="settings-category-list"></div>
+      <div class="input-group">
+        <input type="text" id="new-category-name" placeholder="Add new category...">
+      </div>
+      <button id="add-category-btn" class="btn btn-primary">Add Category</button>
+
+      <!-- Sync section -->
+      <h2>Sync</h2>
+      <p style="font-size:12px;color:var(--muted-color);margin-bottom:8px;">Export or import your tasks to share across devices. Exported data is a JSON string you can copy and paste into another device's import box.</p>
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <button id="export-btn" class="btn btn-primary" style="flex:1;min-width:120px;">Export Data</button>
+        <button id="import-btn" class="btn btn-secondary" style="flex:1;min-width:120px;">Import Data</button>
+      </div>
+      <textarea id="import-textarea" placeholder="Paste exported JSON here..." style="width:100%;min-height:80px;display:none;margin-bottom:8px;"></textarea>
+      <div id="import-actions" style="display:none;margin-bottom:8px;">
+        <button id="cancel-import" class="btn btn-secondary" style="margin-right:8px;">Cancel</button>
+        <button id="confirm-import" class="btn btn-primary">Import</button>
+      </div>
+    </section>
+  </div>
+  <!-- Bottom Navigation -->
+  <nav>
+    <button data-view="today-view" class="active"> 
+      <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8v-10h-8v10zm0-18v6h8V3h-8z"></path></svg>
+      <span>Today</span>
+    </button>
+    <button data-view="all-view">
+      <svg viewBox="0 0 24 24"><path d="M3 13h18v-2H3v2zm0 6h18v-2H3v2zm0-12v2h18V7H3z"></path></svg>
+      <span>All</span>
+    </button>
+    <button id="add-task-nav">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"></path></svg>
+      <span>Add</span>
+    </button>
+    <button data-view="weekly-view">
+      <svg viewBox="0 0 24 24"><path d="M3 5h18v2H3V5zm0 12h18v2H3v-2zM3 11h18v2H3v-2z"></path></svg>
+      <span>Review</span>
+    </button>
+    <button data-view="settings-view">
+      <svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm0-6a1 1 0 01.993.883L13 3v1.07a7.964 7.964 0 014.637 2.016l.76-.761a1 1 0 011.415 1.414l-.76.76A7.964 7.964 0 0120.93 11H22a1 1 0 01.117 1.993L22 13h-1.07a7.964 7.964 0 01-2.016 4.637l.761.76a1 1 0 01-1.414 1.415l-.76-.76A7.964 7.964 0 0113 20.93V22a1 1 0 01-1.993.117L11 22v-1.07a7.964 7.964 0 01-4.637-2.016l-.76.761a1 1 0 01-1.415-1.414l.761-.76A7.964 7.964 0 013.07 13H2a1 1 0 01-.117-1.993L2 11h1.07a7.964 7.964 0 012.016-4.637l-.761-.76a1 1 0 011.414-1.415l.76.761A7.964 7.964 0 0111 3.07V2a1 1 0 011-1z"></path></svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <!-- Add/Edit Task Modal -->
+  <div id="task-modal" class="modal-overlay">
+    <div class="modal">
+      <h2 id="task-modal-title">New Task</h2>
+      <div class="input-group">
+        <label for="task-title">Title</label>
+        <input type="text" id="task-title">
+      </div>
+      <div class="input-group">
+        <label for="task-description">Description</label>
+        <textarea id="task-description"></textarea>
+      </div>
+      <div class="input-group">
+        <label for="task-date">Date</label>
+        <input type="date" id="task-date">
+      </div>
+      <div class="input-group">
+        <label for="task-time">Time</label>
+        <input type="time" id="task-time">
+      </div>
+      <div class="input-group">
+        <label for="task-category">Category</label>
+        <select id="task-category"></select>
+      </div>
+      <div class="input-group">
+        <label for="task-priority">Priority</label>
+        <select id="task-priority">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label for="task-repeat">Repeat</label>
+        <select id="task-repeat">
+          <option value="none">None</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label for="task-nag">Reminder</label>
+        <select id="task-nag">
+          <option value="none">Once</option>
+          <option value="10min">Every 10 min</option>
+          <option value="hour">Hourly</option>
+          <option value="day">Daily</option>
+        </select>
+      </div>
+      <div class="modal-actions" style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+        <button id="task-cancel" class="btn btn-secondary">Cancel</button>
+        <button id="task-save" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task Details Modal -->
+  <div id="detail-modal" class="modal-overlay">
+    <div class="modal">
+      <h2 id="detail-title"></h2>
+      <p id="detail-description" style="margin-top:8px;"></p>
+      <p id="detail-datetime" class="task-meta"></p>
+      <p id="detail-category" class="task-meta"></p>
+      <p id="detail-priority" class="task-meta"></p>
+      <p id="detail-repeat" class="task-meta"></p>
+      <p id="detail-nag" class="task-meta"></p>
+      <div id="subtasks-section" style="margin-top:12px;"></div>
+      <div class="modal-actions" style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button id="detail-complete" class="btn btn-success">Mark Complete</button>
+        <button id="detail-snooze" class="btn btn-secondary">Snooze</button>
+        <button id="detail-edit" class="btn btn-primary">Edit</button>
+        <button id="detail-delete" class="btn btn-danger">Delete</button>
+        <button id="detail-close" class="btn btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Snooze Modal -->
+  <div id="snooze-modal" class="modal-overlay">
+    <div class="modal">
+      <h2>Snooze</h2>
+      <p>How long would you like to snooze this reminder?</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+        <button data-snooze="10" class="btn btn-secondary">10 minutes</button>
+        <button data-snooze="60" class="btn btn-secondary">1 hour</button>
+        <button data-snooze="1440" class="btn btn-secondary">1 day</button>
+      </div>
+      <div class="modal-actions" style="margin-top:20px;display:flex;justify-content:flex-end;">
+        <button id="snooze-cancel" class="btn btn-secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- End of Day Summary Modal -->
+  <div id="summary-modal" class="modal-overlay">
+    <div class="modal">
+      <h2>Daily Summary</h2>
+      <div id="summary-content"></div>
+      <div class="modal-actions" style="margin-top:20px;display:flex;flex-wrap:wrap;gap:8px;">
+        <button id="summary-move" class="btn btn-primary">Move incomplete to tomorrow</button>
+        <button id="summary-close" class="btn btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // MemoryMate JavaScript logic
+    (function() {
+      // Data keys
+      const TASKS_KEY = 'mm_tasks';
+      const CATEGORIES_KEY = 'mm_categories';
+      const SETTINGS_KEY = 'mm_settings';
+      const SUMMARY_SHOWN_KEY = 'mm_summary_shown';
+
+      // In-memory state
+      let tasks = [];
+      let categories = [];
+      let settings = {};
+      let editingTaskId = null;
+      let reminderTimer = null;
+
+      // --- Synchronization ---
+      // Use BroadcastChannel to sync tasks across open tabs/windows. When tasks
+      // change, we broadcast the updated list. When receiving an update, we
+      // replace the local tasks and refresh the UI. Note: this only works
+      // across tabs in the same browser on the same device. There is no
+      // cross-device backend available in this environment.
+      const syncChannel = new BroadcastChannel('memorymate_sync');
+      function broadcastUpdate() {
+        try {
+          syncChannel.postMessage({ type: 'syncUpdate', tasks });
+        } catch (e) {
+          // ignore if channel not available
+        }
+      }
+      syncChannel.onmessage = (event) => {
+        if (event.data && event.data.type === 'syncUpdate') {
+          tasks = event.data.tasks || [];
+          // Persist without re-broadcasting to avoid loops
+          localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+          // Refresh UI
+          renderAll();
+          renderToday();
+          renderCategoryView();
+          renderWeeklyReview();
+        }
+      };
+
+      // Default categories
+      const defaultCategories = [
+        { id: 'teaching', name: 'Teaching', color: '#f39c12' },
+        { id: 'work', name: 'Work', color: '#3498db' },
+        { id: 'home', name: 'Home & Family', color: '#e67e22' },
+        { id: 'bills', name: 'Bills & Finance', color: '#e74c3c' },
+        { id: 'personal', name: 'Personal', color: '#9b59b6' },
+        { id: 'health', name: 'Health', color: '#1abc9c' },
+        { id: 'later', name: 'For Later', color: '#95a5a6' }
+      ];
+
+      /* ---------- Utility Functions ---------- */
+      // Generate a simple unique ID
+      function uuid() {
+        return 'id-' + Math.random().toString(36).substr(2, 9);
+      }
+      // Load tasks from localStorage
+      function loadTasks() {
+        try {
+          tasks = JSON.parse(localStorage.getItem(TASKS_KEY)) || [];
+        } catch (e) { tasks = []; }
+      }
+      // Save tasks to localStorage
+      function saveTasks() {
+        localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+        // broadcast update to other tabs/windows
+        broadcastUpdate();
+      }
+      // Load categories from localStorage or default
+      function loadCategories() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(CATEGORIES_KEY));
+          categories = stored && stored.length ? stored : defaultCategories;
+        } catch (e) {
+          categories = defaultCategories;
+        }
+      }
+      function saveCategories() {
+        localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+      }
+      // Load settings from localStorage or default
+      function loadSettings() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+          settings = stored || { summaryTime: '20:00', theme: 'light' };
+        } catch (e) {
+          settings = { summaryTime: '20:00', theme: 'light' };
+        }
+      }
+      function saveSettings() {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      }
+      // Format date/time strings for display
+      function formatDate(dateStr) {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      }
+      function formatTime(timeStr) {
+        if (!timeStr) return '';
+        const [h,m] = timeStr.split(':').map(n => parseInt(n));
+        const date = new Date();
+        date.setHours(h, m);
+        return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+      }
+      // Combine date and time strings into a Date object
+      function combineDateTime(dateStr, timeStr) {
+        if (!dateStr) return null;
+        const date = new Date(dateStr);
+        if (timeStr) {
+          const [h, m] = timeStr.split(':').map(n => parseInt(n));
+          date.setHours(h, m, 0, 0);
+        } else {
+          date.setHours(0, 0, 0, 0);
+        }
+        return date;
+      }
+      // Determine if a task is overdue
+      function isOverdue(task) {
+        if (task.completed) return false;
+        const due = combineDateTime(task.date, task.time);
+        if (!due) return false;
+        return new Date() > due;
+      }
+      // Determine if task is due today
+      function isToday(task) {
+        const due = combineDateTime(task.date, task.time);
+        if (!due) return false;
+        const now = new Date();
+        return due.toDateString() === now.toDateString();
+      }
+      // Determine if due within next 7 days
+      function isUpcoming(task) {
+        const due = combineDateTime(task.date, task.time);
+        if (!due) return false;
+        const now = new Date();
+        const seven = new Date();
+        seven.setDate(now.getDate() + 7);
+        return due > now && due <= seven;
+      }
+      // Determine if completed within last 7 days
+      function completedLast7(task) {
+        if (!task.completed || !task.completedAt) return false;
+        const comp = new Date(task.completedAt);
+        const now = new Date();
+        const sevenAgo = new Date();
+        sevenAgo.setDate(now.getDate() - 7);
+        return comp >= sevenAgo;
+      }
+      // Add minutes to a date
+      function addMinutes(date, mins) {
+        const d = new Date(date.getTime());
+        d.setMinutes(d.getMinutes() + mins);
+        return d;
+      }
+      // Add days to a date
+      function addDays(date, days) {
+        const d = new Date(date.getTime());
+        d.setDate(d.getDate() + days);
+        return d;
+      }
+      // Add months to a date
+      function addMonths(date, months) {
+        const d = new Date(date.getTime());
+        d.setMonth(d.getMonth() + months);
+        return d;
+      }
+      // Recurrence calculation
+      function getNextOccurrence(task) {
+        const due = combineDateTime(task.date, task.time);
+        if (!due) return null;
+        let next = new Date(due);
+        switch (task.repeat) {
+          case 'daily':
+            next = addDays(next, 1);
+            break;
+          case 'weekly':
+            next = addDays(next, 7);
+            break;
+          case 'monthly':
+            next = addMonths(next, 1);
+            break;
+          default:
+            next = null;
+        }
+        return next;
+      }
+      // Convert nag type to minutes
+      function nagInterval(task) {
+        switch (task.nag) {
+          case '10min': return 10;
+          case 'hour': return 60;
+          case 'day': return 1440;
+          default: return 0;
+        }
+      }
+
+      /* ---------- Rendering Functions ---------- */
+      function renderCategoriesOptions(selectEl) {
+        selectEl.innerHTML = '';
+        categories.forEach(cat => {
+          const opt = document.createElement('option');
+          opt.value = cat.id;
+          opt.textContent = cat.name;
+          selectEl.appendChild(opt);
+        });
+      }
+      function renderToday() {
+        const container = document.getElementById('today-tasks');
+        container.innerHTML = '';
+        const todayTasks = tasks.filter(isToday).sort((a,b) => {
+          const dtA = combineDateTime(a.date,a.time);
+          const dtB = combineDateTime(b.date,b.time);
+          return dtA - dtB;
+        });
+        if (todayTasks.length === 0) {
+          container.innerHTML = '<p>No tasks for today.</p>';
+          return;
+        }
+        // Group into morning, afternoon, evening
+        const groups = { morning: [], afternoon: [], evening: [] };
+        todayTasks.forEach(task => {
+          const time = combineDateTime(task.date, task.time);
+          if (!task.time) {
+            groups.afternoon.push(task);
+          } else {
+            const h = time.getHours();
+            if (h < 12) groups.morning.push(task);
+            else if (h < 17) groups.afternoon.push(task);
+            else groups.evening.push(task);
+          }
+        });
+        ['morning','afternoon','evening'].forEach(group => {
+          if (groups[group].length) {
+            const header = document.createElement('h2');
+            header.textContent = group.charAt(0).toUpperCase() + group.slice(1);
+            container.appendChild(header);
+            groups[group].forEach(task => container.appendChild(createTaskCard(task)));
+          }
+        });
+      }
+      function renderAll() {
+        const container = document.getElementById('all-tasks');
+        container.innerHTML = '';
+        let list = tasks.slice();
+        const search = document.getElementById('search-input').value.toLowerCase();
+        const catFilter = document.getElementById('filter-category').value;
+        const priFilter = document.getElementById('filter-priority').value;
+        if (search) list = list.filter(t => t.title.toLowerCase().includes(search));
+        if (catFilter) list = list.filter(t => t.category === catFilter);
+        if (priFilter) list = list.filter(t => t.priority === priFilter);
+        if (list.length === 0) {
+          container.innerHTML = '<p>No tasks found.</p>';
+          return;
+        }
+        list.sort((a,b) => {
+          const da = combineDateTime(a.date,a.time);
+          const db = combineDateTime(b.date,b.time);
+          return da - db;
+        });
+        list.forEach(task => container.appendChild(createTaskCard(task)));
+      }
+      function renderCategoryView() {
+        const container = document.getElementById('category-list');
+        container.innerHTML = '';
+        categories.forEach(cat => {
+          const catTasks = tasks.filter(t => t.category === cat.id);
+          const section = document.createElement('div');
+          const header = document.createElement('h2');
+          header.textContent = `${cat.name} (${catTasks.length})`;
+          section.appendChild(header);
+          if (catTasks.length) {
+            catTasks.forEach(task => section.appendChild(createTaskCard(task)));
+          } else {
+            const p = document.createElement('p');
+            p.textContent = 'No tasks.';
+            section.appendChild(p);
+          }
+          container.appendChild(section);
+        });
+      }
+      function renderWeeklyReview() {
+        const completedDiv = document.getElementById('weekly-completed');
+        const overdueDiv = document.getElementById('weekly-overdue');
+        const upcomingDiv = document.getElementById('weekly-upcoming');
+        completedDiv.innerHTML = '<h2>Completed (last 7 days)</h2>';
+        overdueDiv.innerHTML = '<h2>Overdue</h2>';
+        upcomingDiv.innerHTML = '<h2>Upcoming (next 7 days)</h2>';
+        const completedList = tasks.filter(completedLast7);
+        completedList.forEach(task => completedDiv.appendChild(createTaskCard(task)));
+        const overdueList = tasks.filter(t => isOverdue(t));
+        overdueList.forEach(task => overdueDiv.appendChild(createTaskCard(task)));
+        const upcomingList = tasks.filter(t => !t.completed && isUpcoming(t));
+        upcomingList.forEach(task => upcomingDiv.appendChild(createTaskCard(task)));
+        if (completedList.length === 0) completedDiv.innerHTML += '<p>No completed tasks.</p>';
+        if (overdueList.length === 0) overdueDiv.innerHTML += '<p>No overdue tasks.</p>';
+        if (upcomingList.length === 0) upcomingDiv.innerHTML += '<p>No upcoming tasks.</p>';
+      }
+      function renderSettings() {
+        document.getElementById('summary-time').value = settings.summaryTime;
+        const themeToggle = document.getElementById('theme-toggle');
+        if (settings.theme === 'dark') themeToggle.classList.add('active'); else themeToggle.classList.remove('active');
+        // categories list
+        const list = document.getElementById('settings-category-list');
+        list.innerHTML = '';
+        categories.forEach(cat => {
+          const row = document.createElement('div');
+          row.style.display = 'flex';
+          row.style.justifyContent = 'space-between';
+          row.style.alignItems = 'center';
+          row.style.marginBottom = '6px';
+          const span = document.createElement('span');
+          span.textContent = cat.name;
+          span.style.background = cat.color;
+          span.style.padding = '2px 6px';
+          span.style.borderRadius = '4px';
+          span.style.color = '#fff';
+          const del = document.createElement('button');
+          del.textContent = '✕';
+          del.style.background = 'transparent';
+          del.style.border = 'none';
+          del.style.color = varGet('--danger-color');
+          del.style.cursor = 'pointer';
+          del.onclick = () => {
+            if (!confirm('Delete category? Tasks will remain but lose category.')) return;
+            categories = categories.filter(c => c.id !== cat.id);
+            tasks.forEach(t => { if (t.category === cat.id) t.category = ''; });
+            saveCategories(); saveTasks();
+            renderSettings(); renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview();
+          };
+          row.appendChild(span);
+          row.appendChild(del);
+          list.appendChild(row);
+        });
+      }
+      // Helper to read CSS variables
+      function varGet(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name);
+      }
+      // Create a task card element
+      function createTaskCard(task) {
+        const card = document.createElement('div');
+        card.className = 'task-card';
+        if (isOverdue(task)) card.classList.add('overdue');
+        const icon = document.createElement('div');
+        icon.className = 'task-icon';
+        const cat = categories.find(c => c.id === task.category);
+        icon.style.background = cat ? cat.color : '#ccc';
+        const content = document.createElement('div');
+        content.className = 'task-content';
+        const title = document.createElement('div');
+        title.className = 'task-title';
+        title.textContent = task.title;
+        const meta = document.createElement('div');
+        meta.className = 'task-meta';
+        const date = combineDateTime(task.date, task.time);
+        meta.innerHTML = `${task.date ? formatDate(task.date) : ''} ${task.time ? formatTime(task.time) : ''}`;
+        const priSpan = document.createElement('span');
+        priSpan.textContent = task.priority;
+        priSpan.className = `priority-${task.priority}`;
+        meta.appendChild(priSpan);
+        if (isOverdue(task)) {
+          const o = document.createElement('span');
+          o.textContent = 'Overdue';
+          o.style.color = varGet('--danger-color');
+          meta.appendChild(o);
+        }
+        content.appendChild(title);
+        content.appendChild(meta);
+        card.appendChild(icon);
+        card.appendChild(content);
+        // Add event
+        card.onclick = () => openTaskDetail(task.id);
+        return card;
+      }
+
+      /* ---------- Modal Handling ---------- */
+      function openTaskModal(taskId) {
+        editingTaskId = taskId || null;
+        // Fill form
+        const titleEl = document.getElementById('task-title');
+        const descEl = document.getElementById('task-description');
+        const dateEl = document.getElementById('task-date');
+        const timeEl = document.getElementById('task-time');
+        const catEl = document.getElementById('task-category');
+        const priEl = document.getElementById('task-priority');
+        const repEl = document.getElementById('task-repeat');
+        const nagEl = document.getElementById('task-nag');
+        renderCategoriesOptions(catEl);
+        if (taskId) {
+          document.getElementById('task-modal-title').textContent = 'Edit Task';
+          const task = tasks.find(t => t.id === taskId);
+          if (!task) return;
+          titleEl.value = task.title;
+          descEl.value = task.description || '';
+          dateEl.value = task.date || '';
+          timeEl.value = task.time || '';
+          catEl.value = task.category || '';
+          priEl.value = task.priority || 'low';
+          repEl.value = task.repeat || 'none';
+          nagEl.value = task.nag || 'none';
+        } else {
+          document.getElementById('task-modal-title').textContent = 'New Task';
+          titleEl.value = '';
+          descEl.value = '';
+          dateEl.value = '';
+          timeEl.value = '';
+          catEl.value = '';
+          priEl.value = 'low';
+          repEl.value = 'none';
+          nagEl.value = 'none';
+        }
+        document.getElementById('task-modal').classList.add('active');
+      }
+      function closeTaskModal() {
+        document.getElementById('task-modal').classList.remove('active');
+      }
+      function openTaskDetail(taskId) {
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+        document.getElementById('detail-title').textContent = task.title;
+        document.getElementById('detail-description').textContent = task.description || '';
+        document.getElementById('detail-datetime').textContent = `${task.date ? formatDate(task.date) : ''} ${task.time ? formatTime(task.time) : ''}`;
+        const cat = categories.find(c => c.id === task.category);
+        document.getElementById('detail-category').textContent = 'Category: ' + (cat ? cat.name : 'None');
+        document.getElementById('detail-priority').textContent = 'Priority: ' + task.priority;
+        document.getElementById('detail-repeat').textContent = 'Repeat: ' + task.repeat;
+        document.getElementById('detail-nag').textContent = 'Reminder: ' + task.nag;
+        // Subtasks section
+        const subtSection = document.getElementById('subtasks-section');
+        subtSection.innerHTML = '<h3>Subtasks</h3>';
+        if (!task.subtasks) task.subtasks = [];
+        const list = document.createElement('div');
+        list.className = 'subtasks-list';
+        task.subtasks.forEach(sub => {
+          const item = document.createElement('div');
+          item.className = 'subtask-item';
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = sub.completed;
+          cb.onchange = () => {
+            sub.completed = cb.checked;
+            saveTasks();
+          };
+          const span = document.createElement('span');
+          span.textContent = sub.title;
+          item.appendChild(cb);
+          item.appendChild(span);
+          list.appendChild(item);
+        });
+        // Add new subtask input
+        const inputGroup = document.createElement('div');
+        inputGroup.style.display = 'flex';
+        inputGroup.style.marginTop = '8px';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'New subtask...';
+        input.style.flex = '1';
+        const btn = document.createElement('button');
+        btn.textContent = '+';
+        btn.style.marginLeft = '4px';
+        btn.className = 'btn btn-primary';
+        btn.onclick = () => {
+          const val = input.value.trim();
+          if (!val) return;
+          task.subtasks.push({ id: uuid(), title: val, completed: false });
+          input.value = '';
+          saveTasks();
+          openTaskDetail(taskId); // rerender
+        };
+        inputGroup.appendChild(input);
+        inputGroup.appendChild(btn);
+        subtSection.appendChild(list);
+        subtSection.appendChild(inputGroup);
+        // Set buttons events
+        document.getElementById('detail-complete').onclick = () => {
+          completeTask(taskId);
+          closeDetailModal();
+        };
+        document.getElementById('detail-snooze').onclick = () => {
+          openSnoozeModal(taskId);
+        };
+        document.getElementById('detail-edit').onclick = () => {
+          closeDetailModal();
+          openTaskModal(taskId);
+        };
+        document.getElementById('detail-delete').onclick = () => {
+          if (!confirm('Delete this task?')) return;
+          deleteTask(taskId);
+          closeDetailModal();
+        };
+        document.getElementById('detail-close').onclick = () => closeDetailModal();
+        document.getElementById('detail-modal').classList.add('active');
+      }
+      function closeDetailModal() {
+        document.getElementById('detail-modal').classList.remove('active');
+      }
+      function openSnoozeModal(taskId) {
+        const snooze = document.getElementById('snooze-modal');
+        snooze.classList.add('active');
+        // Set handlers
+        snooze.querySelectorAll('button[data-snooze]').forEach(btn => {
+          btn.onclick = () => {
+            const mins = parseInt(btn.getAttribute('data-snooze'));
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            const nextTime = addMinutes(new Date(), mins);
+            task.nextReminder = nextTime.getTime();
+            saveTasks();
+            snooze.classList.remove('active');
+          };
+        });
+        document.getElementById('snooze-cancel').onclick = () => snooze.classList.remove('active');
+      }
+      function closeSnoozeModal() {
+        document.getElementById('snooze-modal').classList.remove('active');
+      }
+      function openSummaryModal() {
+        const cont = document.getElementById('summary-content');
+        cont.innerHTML = '';
+        const completedToday = tasks.filter(t => t.completed && new Date(t.completedAt).toDateString() === new Date().toDateString());
+        const incompleteToday = tasks.filter(t => !t.completed && isToday(t));
+        const compHeader = document.createElement('h3');
+        compHeader.textContent = 'Completed Today';
+        cont.appendChild(compHeader);
+        if (completedToday.length) {
+          completedToday.forEach(task => cont.appendChild(createTaskCard(task)));
+        } else {
+          cont.appendChild(document.createTextNode('No completed tasks today.'));
+        }
+        const incHeader = document.createElement('h3');
+        incHeader.style.marginTop = '12px';
+        incHeader.textContent = 'Incomplete Today';
+        cont.appendChild(incHeader);
+        if (incompleteToday.length) {
+          incompleteToday.forEach(task => cont.appendChild(createTaskCard(task)));
+        } else {
+          cont.appendChild(document.createTextNode('No incomplete tasks today.'));
+        }
+        document.getElementById('summary-modal').classList.add('active');
+        // Move incomplete tasks to tomorrow
+        document.getElementById('summary-move').onclick = () => {
+          incompleteToday.forEach(task => {
+            const due = combineDateTime(task.date, task.time);
+            const tomorrow = addDays(new Date(), 1);
+            task.date = tomorrow.toISOString().split('T')[0];
+            // keep time same
+            task.nextReminder = combineDateTime(task.date, task.time) ? combineDateTime(task.date, task.time).getTime() : null;
+          });
+          saveTasks();
+          document.getElementById('summary-modal').classList.remove('active');
+          renderAll(); renderToday(); renderWeeklyReview(); renderCategoryView();
+        };
+        document.getElementById('summary-close').onclick = () => {
+          document.getElementById('summary-modal').classList.remove('active');
+        };
+      }
+
+      /* ---------- Task Operations ---------- */
+      function saveTaskFromModal() {
+        const title = document.getElementById('task-title').value.trim();
+        if (!title) { alert('Please enter a title'); return; }
+        const desc = document.getElementById('task-description').value.trim();
+        const date = document.getElementById('task-date').value;
+        const time = document.getElementById('task-time').value;
+        const category = document.getElementById('task-category').value;
+        const priority = document.getElementById('task-priority').value;
+        const repeat = document.getElementById('task-repeat').value;
+        const nag = document.getElementById('task-nag').value;
+        const newTask = {
+          id: editingTaskId || uuid(),
+          title,
+          description: desc,
+          date,
+          time,
+          category,
+          priority,
+          repeat,
+          nag,
+          completed: false,
+          completedAt: null,
+          nextReminder: null,
+          subtasks: editingTaskId ? (tasks.find(t => t.id === editingTaskId).subtasks || []) : [],
+          createdAt: new Date().toISOString()
+        };
+        const dueDT = combineDateTime(date, time);
+        if (dueDT) newTask.nextReminder = dueDT.getTime();
+        if (editingTaskId) {
+          // Update existing
+          tasks = tasks.map(t => t.id === editingTaskId ? newTask : t);
+        } else {
+          tasks.push(newTask);
+        }
+        saveTasks();
+        closeTaskModal();
+        renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview();
+      }
+      function deleteTask(id) {
+        tasks = tasks.filter(t => t.id !== id);
+        saveTasks();
+        renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview();
+      }
+      function completeTask(id) {
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+        task.completed = true;
+        task.completedAt = new Date().toISOString();
+        task.nextReminder = null;
+        saveTasks();
+        // If recurring, generate new
+        if (task.repeat && task.repeat !== 'none') {
+          const next = getNextOccurrence(task);
+          if (next) {
+            const newId = uuid();
+            const newTask = Object.assign({}, task, {
+              id: newId,
+              date: next.toISOString().split('T')[0],
+              time: task.time,
+              completed: false,
+              completedAt: null,
+              nextReminder: next.getTime(),
+              subtasks: task.subtasks ? task.subtasks.map(st => ({ id: uuid(), title: st.title, completed: false })) : []
+            });
+            tasks.push(newTask);
+          }
+        }
+        saveTasks();
+        renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview();
+      }
+
+      /* ---------- Reminder & Summary Scheduler ---------- */
+      function startReminderCheck() {
+        if (reminderTimer) clearInterval(reminderTimer);
+        reminderTimer = setInterval(() => {
+          const now = Date.now();
+          // Check reminders
+          tasks.forEach(task => {
+            if (task.nextReminder && !task.completed && task.nextReminder <= now) {
+              showReminder(task);
+            }
+          });
+          // Check summary time
+          checkDailySummary();
+        }, 60000); // check every minute
+      }
+      function showReminder(task) {
+        // Avoid repeated reminders: reset nextReminder
+        if (task.nag === 'none') {
+          task.nextReminder = null;
+        } else {
+          const interval = nagInterval(task);
+          if (interval > 0) {
+            const next = addMinutes(new Date(), interval);
+            task.nextReminder = next.getTime();
+          }
+        }
+        saveTasks();
+        const toast = document.getElementById('reminder-toast');
+        toast.innerHTML = `${task.title} due! <button id="rem-done">Done</button> <button id="rem-snooze">Snooze</button>`;
+        toast.style.display = 'block';
+        // Optionally play sound
+        try {
+          const beep = new Audio('data:audio/wav;base64,UklGRtQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YcQAAAB//3///wD/AAD///8AAACAgICAgP8AAID/AgD//wD/8AAAP//AAD//wAAgP8AAP//AAD//wAA////AAD//wAA');
+          beep.play();
+        } catch(e) {}
+        toast.querySelector('#rem-done').onclick = () => {
+          completeTask(task.id);
+          toast.style.display = 'none';
+        };
+        toast.querySelector('#rem-snooze').onclick = () => {
+          openSnoozeModal(task.id);
+          toast.style.display = 'none';
+        };
+      }
+      function checkDailySummary() {
+        const todayStr = new Date().toDateString();
+        const lastShown = localStorage.getItem(SUMMARY_SHOWN_KEY);
+        if (lastShown === todayStr) return; // already shown today
+        const timeParts = settings.summaryTime.split(':');
+        const summaryDate = new Date();
+        summaryDate.setHours(parseInt(timeParts[0]), parseInt(timeParts[1]), 0, 0);
+        if (Date.now() >= summaryDate.getTime()) {
+          // Show summary
+          openSummaryModal();
+          localStorage.setItem(SUMMARY_SHOWN_KEY, todayStr);
+        }
+      }
+
+      /* ---------- Event Listeners ---------- */
+      function addEventListeners() {
+        // Navigation buttons
+        document.querySelectorAll('nav button[data-view]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const view = btn.getAttribute('data-view');
+            setActiveView(view);
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+          });
+        });
+        // Add task nav button
+        document.getElementById('add-task-nav').addEventListener('click', () => {
+          openTaskModal(null);
+        });
+        // Modal save/cancel
+        document.getElementById('task-cancel').addEventListener('click', closeTaskModal);
+        document.getElementById('task-save').addEventListener('click', saveTaskFromModal);
+        // Search & filter
+        document.getElementById('search-input').addEventListener('input', renderAll);
+        document.getElementById('filter-category').addEventListener('change', renderAll);
+        document.getElementById('filter-priority').addEventListener('change', renderAll);
+        // Settings change
+        document.getElementById('summary-time').addEventListener('change', (e) => {
+          settings.summaryTime = e.target.value;
+          saveSettings();
+        });
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+          const theme = settings.theme === 'light' ? 'dark' : 'light';
+          settings.theme = theme;
+          document.body.classList.toggle('dark', theme === 'dark');
+          saveSettings();
+        });
+        document.getElementById('add-category-btn').addEventListener('click', () => {
+          const name = document.getElementById('new-category-name').value.trim();
+          if (!name) return;
+          const id = uuid();
+          // Random color generation
+          const color = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+          categories.push({ id, name, color });
+          document.getElementById('new-category-name').value = '';
+          saveCategories();
+          renderSettings(); renderAll(); renderToday(); renderCategoryView();
+        });
+
+        // Export tasks/categories/settings to clipboard
+        const exportBtn = document.getElementById('export-btn');
+        if (exportBtn) {
+          exportBtn.addEventListener('click', () => {
+            const dataStr = JSON.stringify({ tasks, categories, settings });
+            // Attempt to copy to clipboard
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(dataStr).then(() => {
+                alert('Data copied to clipboard. Paste into the import box on your other device.');
+              }).catch(() => {
+                // fallback: show in textarea
+                const ta = document.getElementById('import-textarea');
+                ta.value = dataStr;
+                ta.style.display = 'block';
+                document.getElementById('import-actions').style.display = 'none';
+              });
+            } else {
+              const ta = document.getElementById('import-textarea');
+              ta.value = dataStr;
+              ta.style.display = 'block';
+              document.getElementById('import-actions').style.display = 'none';
+              alert('Copy the data from the text box.');
+            }
+          });
+        }
+        // Start import flow: show textarea and actions
+        const importBtn = document.getElementById('import-btn');
+        if (importBtn) {
+          importBtn.addEventListener('click', () => {
+            const ta = document.getElementById('import-textarea');
+            ta.value = '';
+            ta.style.display = 'block';
+            document.getElementById('import-actions').style.display = 'flex';
+          });
+        }
+        // Cancel import
+        const cancelImport = document.getElementById('cancel-import');
+        if (cancelImport) {
+          cancelImport.addEventListener('click', () => {
+            document.getElementById('import-textarea').style.display = 'none';
+            document.getElementById('import-actions').style.display = 'none';
+          });
+        }
+        // Confirm import
+        const confirmImport = document.getElementById('confirm-import');
+        if (confirmImport) {
+          confirmImport.addEventListener('click', () => {
+            const text = document.getElementById('import-textarea').value.trim();
+            if (!text) { alert('Please paste exported JSON data.'); return; }
+            try {
+              const data = JSON.parse(text);
+              tasks = data.tasks || [];
+              categories = data.categories || categories;
+              settings = Object.assign(settings, data.settings || {});
+              saveTasks();
+              saveCategories();
+              saveSettings();
+              document.getElementById('import-textarea').style.display = 'none';
+              document.getElementById('import-actions').style.display = 'none';
+              renderSettings();
+              renderToday();
+              renderAll();
+              renderCategoryView();
+              renderWeeklyReview();
+              alert('Data imported successfully.');
+            } catch (e) {
+              alert('Invalid JSON. Please ensure you pasted the exported data correctly.');
+            }
+          });
+        }
+
+        // Link to category view from All tasks
+        const catBtn = document.getElementById('goto-category-view');
+        if (catBtn) {
+          catBtn.addEventListener('click', () => {
+            setActiveView('category-view');
+          });
+        }
+        // Back button from Category view
+        const backBtn = document.getElementById('back-to-all');
+        if (backBtn) {
+          backBtn.addEventListener('click', () => {
+            // simulate click on All nav to set active state
+            const navAll = document.querySelector('nav button[data-view="all-view"]');
+            if (navAll) {
+              navAll.click();
+            } else {
+              setActiveView('all-view');
+            }
+          });
+        }
+      }
+      function setActiveView(viewId) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(viewId).classList.add('active');
+        // Render specific view if needed
+        if (viewId === 'today-view') renderToday();
+        if (viewId === 'all-view') {
+          // populate filter categories
+          const select = document.getElementById('filter-category');
+          select.innerHTML = '<option value="">All Categories</option>';
+          categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat.id;
+            opt.textContent = cat.name;
+            select.appendChild(opt);
+          });
+          renderAll();
+        }
+        if (viewId === 'category-view') renderCategoryView();
+        if (viewId === 'weekly-view') renderWeeklyReview();
+        if (viewId === 'settings-view') renderSettings();
+      }
+
+      /* ---------- Initialization ---------- */
+      function init() {
+        loadTasks();
+        loadCategories();
+        loadSettings();
+        // Apply theme
+        document.body.classList.toggle('dark', settings.theme === 'dark');
+        // Render initial views
+        renderToday();
+        renderAll();
+        renderCategoryView();
+        renderWeeklyReview();
+        renderSettings();
+        // Start reminder scheduler
+        startReminderCheck();
+        // Setup events
+        addEventListeners();
+        // Prepare category select for add/edit
+        renderCategoriesOptions(document.getElementById('task-category'));
+      }
+      // Wait for DOM ready
+      document.addEventListener('DOMContentLoaded', init);
+    })();
+  </script>
+</body>
+</html>
