@@ -402,6 +402,8 @@ To use: copy this entire file into a .html file and open in a modern browser.
       <div id="weekly-completed"></div>
       <div id="weekly-overdue"></div>
       <div id="weekly-upcoming"></div>
+      <!-- Statistics display area for weekly review -->
+      <div id="stats-section"></div>
     </section>
     <!-- Settings View -->
     <section id="settings-view" class="view">
@@ -432,6 +434,15 @@ To use: copy this entire file into a .html file and open in a modern browser.
       <div id="import-actions" style="display:none;margin-bottom:8px;">
         <button id="cancel-import" class="btn btn-secondary" style="margin-right:8px;">Cancel</button>
         <button id="confirm-import" class="btn btn-primary">Import</button>
+      </div>
+      <!-- Remote Sync section -->
+      <h2>Remote Sync</h2>
+      <p style="font-size:12px;color:var(--muted-color);margin-bottom:8px;">Optionally specify a URL pointing to a JSON file to pull tasks and categories from for cross-device sync. Note: pushing to remote is not automatic.</p>
+      <div class="input-group">
+        <input type="text" id="remote-url" placeholder="https://raw.githubusercontent.com/.../tasks.json">
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <button id="remote-sync-btn" class="btn btn-secondary" style="flex:1;min-width:120px;">Sync from Remote</button>
       </div>
     </section>
   </div>
@@ -652,17 +663,25 @@ To use: copy this entire file into a .html file and open in a modern browser.
       function loadSettings() {
         try {
           const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY));
-          settings = stored || { summaryTime: '20:00', theme: 'light' };
+          settings = stored || { summaryTime: '20:00', theme: 'light', remoteUrl: '' };
         } catch (e) {
-          settings = { summaryTime: '20:00', theme: 'light' };
+          settings = { summaryTime: '20:00', theme: 'light', remoteUrl: '' };
         }
+        // Ensure remoteUrl key exists
+        if (settings.remoteUrl === undefined) settings.remoteUrl = '';
       }
       function saveSettings() {
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
       }
       // Format date/time strings for display
       function formatDate(dateStr) {
-        const d = new Date(dateStr);
+        // Parse date string as local date to avoid timezone offset issues when formatting.
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        const year = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1;
+        const day = parseInt(parts[2]);
+        const d = new Date(year, month, day);
         return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
       }
       function formatTime(timeStr) {
@@ -675,7 +694,13 @@ To use: copy this entire file into a .html file and open in a modern browser.
       // Combine date and time strings into a Date object
       function combineDateTime(dateStr, timeStr) {
         if (!dateStr) return null;
-        const date = new Date(dateStr);
+        // Combine date and time into a Date object using local timezone.
+        if (!dateStr) return null;
+        const parts = dateStr.split('-');
+        const year = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1;
+        const day = parseInt(parts[2]);
+        const date = new Date(year, month, day);
         if (timeStr) {
           const [h, m] = timeStr.split(':').map(n => parseInt(n));
           date.setHours(h, m, 0, 0);
@@ -864,11 +889,50 @@ To use: copy this entire file into a .html file and open in a modern browser.
         if (completedList.length === 0) completedDiv.innerHTML += '<p>No completed tasks.</p>';
         if (overdueList.length === 0) overdueDiv.innerHTML += '<p>No overdue tasks.</p>';
         if (upcomingList.length === 0) upcomingDiv.innerHTML += '<p>No upcoming tasks.</p>';
+        // Render overall statistics in stats section
+        if (typeof renderStats === 'function') {
+          renderStats();
+        }
+      }
+
+      // Display aggregate statistics for tasks and categories
+      function renderStats() {
+        const statsCont = document.getElementById('stats-section');
+        if (!statsCont) return;
+        statsCont.innerHTML = '<h2>Stats</h2>';
+        const total = tasks.length;
+        const completed = tasks.filter(t => t.completed).length;
+        const completionRate = total ? Math.round((completed / total) * 100) : 0;
+        const priCounts = { low: 0, medium: 0, high: 0 };
+        tasks.forEach(t => { if (t.priority) priCounts[t.priority]++; });
+        const catCounts = {};
+        tasks.forEach(t => { catCounts[t.category] = (catCounts[t.category] || 0) + 1; });
+        const sortedCats = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
+        const ul = document.createElement('ul');
+        ul.style.fontSize = '14px';
+        ul.style.marginLeft = '16px';
+        const li1 = document.createElement('li'); li1.textContent = `Total tasks: ${total}`; ul.appendChild(li1);
+        const li2 = document.createElement('li'); li2.textContent = `Completed tasks: ${completed}`; ul.appendChild(li2);
+        const li3 = document.createElement('li'); li3.textContent = `Completion rate: ${completionRate}%`; ul.appendChild(li3);
+        const li4 = document.createElement('li'); li4.textContent = `Low/Med/High priorities: ${priCounts.low}/${priCounts.medium}/${priCounts.high}`; ul.appendChild(li4);
+        if (sortedCats.length) {
+          const li5 = document.createElement('li');
+          const names = sortedCats.map(([id, count]) => {
+            const cat = categories.find(c => c.id === id);
+            return `${cat ? cat.name : 'No category'} (${count})`;
+          });
+          li5.textContent = 'Top categories: ' + names.join(', ');
+          ul.appendChild(li5);
+        }
+        statsCont.appendChild(ul);
       }
       function renderSettings() {
         document.getElementById('summary-time').value = settings.summaryTime;
         const themeToggle = document.getElementById('theme-toggle');
         if (settings.theme === 'dark') themeToggle.classList.add('active'); else themeToggle.classList.remove('active');
+        // remote sync URL input
+        const remoteInput = document.getElementById('remote-url');
+        if (remoteInput) remoteInput.value = settings.remoteUrl || '';
         // categories list
         const list = document.getElementById('settings-category-list');
         list.innerHTML = '';
@@ -1368,6 +1432,42 @@ To use: copy this entire file into a .html file and open in a modern browser.
             } catch (e) {
               alert('Invalid JSON. Please ensure you pasted the exported data correctly.');
             }
+          });
+        }
+
+        // Remote URL change
+        const remoteInput = document.getElementById('remote-url');
+        if (remoteInput) {
+          remoteInput.addEventListener('change', (e) => {
+            settings.remoteUrl = e.target.value.trim();
+            saveSettings();
+          });
+        }
+        // Remote sync button
+        const remoteSync = document.getElementById('remote-sync-btn');
+        if (remoteSync) {
+          remoteSync.addEventListener('click', () => {
+            if (!settings.remoteUrl) {
+              alert('Please enter a remote URL first.');
+              return;
+            }
+            fetch(settings.remoteUrl)
+              .then(res => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+              })
+              .then(data => {
+                if (data.tasks) tasks = data.tasks;
+                if (data.categories) categories = data.categories;
+                if (data.settings) settings = Object.assign(settings, data.settings);
+                saveTasks(); saveCategories(); saveSettings();
+                renderToday(); renderAll(); renderCategoryView(); renderWeeklyReview(); renderSettings();
+                broadcastUpdate();
+                alert('Data synced from remote.');
+              })
+              .catch(err => {
+                alert('Failed to fetch remote data: ' + err.message);
+              });
           });
         }
 
