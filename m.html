@@ -962,10 +962,9 @@ To use: copy this entire file into a .html file and open in a modern browser.
         pushStateToCloud();
       }, 250);
     }
-    async function pushStateToCloud() {
-      if (!userDocRef || !hasPendingLocalSync() || isApplyingRemoteUpdate) return;
+    async function syncStateToCloud(contextLabel = 'data') {
+      if (!userDocRef || isApplyingRemoteUpdate) return false;
       const syncTimestamp = new Date().toISOString();
-      lastLocalSyncTimestamp = syncTimestamp;
       const payload = {
         tasks,
         categories,
@@ -974,11 +973,20 @@ To use: copy this entire file into a .html file and open in a modern browser.
       };
       try {
         await userDocRef.set(payload, { merge: true });
+        lastLocalSyncTimestamp = syncTimestamp;
         clearPendingSyncFlag();
+        return true;
       } catch (err) {
-        console.log('Error saving data to Firestore:', err);
+        console.log(`Error saving ${contextLabel} to Firestore:`, err);
         markPendingSync();
         scheduleCloudSync();
+        return false;
+      }
+    }
+    async function pushStateToCloud() {
+      if (!userDocRef || !hasPendingLocalSync() || isApplyingRemoteUpdate) return;
+      try {
+        await syncStateToCloud('pending changes');
       } finally {
         cloudSyncTimer = null;
       }
@@ -1044,7 +1052,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
         } catch (e) { tasks = []; }
       }
     // Save tasks to localStorage
-    function saveTasks(options = {}) {
+    async function saveTasks(options = {}) {
       const { skipRemote = false, skipBroadcast = false } = options;
       // Update lastModified timestamp for modified tasks
       if (!isApplyingRemoteUpdate) {
@@ -1059,26 +1067,13 @@ To use: copy this entire file into a .html file and open in a modern browser.
       if (!skipBroadcast) {
         broadcastUpdate();
       }
-      if (!skipRemote && userDocRef && !isApplyingRemoteUpdate) {
-        // Save immediately to Firestore when logged in
-        try {
-          const syncTimestamp = new Date().toISOString();
-          lastLocalSyncTimestamp = syncTimestamp;
-          userDocRef.set({ 
-            tasks: tasks, 
-            categories: categories, 
-            settings: settings,
-            lastSyncedAt: syncTimestamp
-          }, { merge: true });
-        } catch (err) {
-          console.log('Error saving tasks to Firestore:', err);
-          // Fallback to scheduled sync if immediate save fails
+      if (!skipRemote && !isApplyingRemoteUpdate) {
+        if (userDocRef) {
+          await syncStateToCloud('tasks');
+        } else {
           markPendingSync();
           scheduleCloudSync();
         }
-      } else if (!skipRemote && !isApplyingRemoteUpdate) {
-        markPendingSync();
-        scheduleCloudSync();
       }
     }
       // Load categories from localStorage or default
@@ -1090,31 +1085,19 @@ To use: copy this entire file into a .html file and open in a modern browser.
           categories = defaultCategories;
         }
       }
-      function saveCategories(options = {}) {
-        const { skipRemote = false } = options;
-        localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
-        refreshCategorySelects();
-        if (!skipRemote && userDocRef && !isApplyingRemoteUpdate) {
-          // Save immediately to Firestore when logged in
-          try {
-            const syncTimestamp = new Date().toISOString();
-            lastLocalSyncTimestamp = syncTimestamp;
-            userDocRef.set({ 
-              tasks: tasks, 
-              categories: categories, 
-              settings: settings,
-              lastSyncedAt: syncTimestamp
-            }, { merge: true });
-          } catch (err) {
-            console.log('Error saving categories to Firestore:', err);
-            markPendingSync();
-            scheduleCloudSync();
-          }
-        } else if (!skipRemote && !isApplyingRemoteUpdate) {
+    async function saveCategories(options = {}) {
+      const { skipRemote = false } = options;
+      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+      refreshCategorySelects();
+      if (!skipRemote && !isApplyingRemoteUpdate) {
+        if (userDocRef) {
+          await syncStateToCloud('categories');
+        } else {
           markPendingSync();
           scheduleCloudSync();
         }
       }
+    }
       // Load settings from localStorage or default
       function loadSettings() {
         try {
@@ -1126,28 +1109,16 @@ To use: copy this entire file into a .html file and open in a modern browser.
         }
         // Removed remoteUrl key: synchronization is managed via Firebase.
       }
-    function saveSettings(options = {}) {
+    async function saveSettings(options = {}) {
       const { skipRemote = false } = options;
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-      if (!skipRemote && userDocRef && !isApplyingRemoteUpdate) {
-        // Save immediately to Firestore when logged in
-        try {
-          const syncTimestamp = new Date().toISOString();
-          lastLocalSyncTimestamp = syncTimestamp;
-          userDocRef.set({ 
-            tasks: tasks, 
-            categories: categories, 
-            settings: settings,
-            lastSyncedAt: syncTimestamp
-          }, { merge: true });
-        } catch (err) {
-          console.log('Error saving settings to Firestore:', err);
+      if (!skipRemote && !isApplyingRemoteUpdate) {
+        if (userDocRef) {
+          await syncStateToCloud('settings');
+        } else {
           markPendingSync();
           scheduleCloudSync();
         }
-      } else if (!skipRemote && !isApplyingRemoteUpdate) {
-        markPendingSync();
-        scheduleCloudSync();
       }
     }
       // Format date/time strings for display
