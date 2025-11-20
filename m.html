@@ -1016,7 +1016,17 @@ To use: copy this entire file into a .html file and open in a modern browser.
       if (!skipBroadcast) {
         broadcastUpdate();
       }
-      if (!skipRemote) {
+      if (!skipRemote && userDocRef) {
+        // Save immediately to Firestore when logged in
+        try {
+          userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
+        } catch (err) {
+          console.log('Error saving tasks to Firestore:', err);
+          // Fallback to scheduled sync if immediate save fails
+          markPendingSync();
+          scheduleCloudSync();
+        }
+      } else if (!skipRemote) {
         markPendingSync();
         scheduleCloudSync();
       }
@@ -1034,11 +1044,20 @@ To use: copy this entire file into a .html file and open in a modern browser.
         const { skipRemote = false } = options;
         localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
         refreshCategorySelects();
-      if (!skipRemote) {
-        markPendingSync();
-        scheduleCloudSync();
+        if (!skipRemote && userDocRef) {
+          // Save immediately to Firestore when logged in
+          try {
+            userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
+          } catch (err) {
+            console.log('Error saving categories to Firestore:', err);
+            markPendingSync();
+            scheduleCloudSync();
+          }
+        } else if (!skipRemote) {
+          markPendingSync();
+          scheduleCloudSync();
+        }
       }
-    }
       // Load settings from localStorage or default
       function loadSettings() {
         try {
@@ -1053,7 +1072,16 @@ To use: copy this entire file into a .html file and open in a modern browser.
     function saveSettings(options = {}) {
       const { skipRemote = false } = options;
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-      if (!skipRemote) {
+      if (!skipRemote && userDocRef) {
+        // Save immediately to Firestore when logged in
+        try {
+          userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
+        } catch (err) {
+          console.log('Error saving settings to Firestore:', err);
+          markPendingSync();
+          scheduleCloudSync();
+        }
+      } else if (!skipRemote) {
         markPendingSync();
         scheduleCloudSync();
       }
@@ -2202,20 +2230,26 @@ To use: copy this entire file into a .html file and open in a modern browser.
               const remoteTasks = Array.isArray(data.tasks) ? data.tasks : [];
               const remoteCategories = Array.isArray(data.categories) ? data.categories : defaultCategories.slice();
               const remoteSettings = Object.assign({ summaryTime: '20:00', theme: 'light' }, data.settings || {});
-              const pendingLocalChanges = hasPendingLocalSync();
-              if (pendingLocalChanges) {
-                tasks = mergeListsById(remoteTasks, tasks);
-                categories = mergeListsById(remoteCategories, categories);
-                settings = Object.assign({}, remoteSettings, settings);
-              } else {
-                tasks = remoteTasks;
-                categories = remoteCategories;
-                settings = remoteSettings;
-                clearPendingSyncFlag();
-              }
+              // Always merge local and remote data to prevent data loss
+              // Load current local state first
+              loadTasks();
+              loadCategories();
+              loadSettings();
+              // Merge remote and local data (local takes precedence for conflicts)
+              tasks = mergeListsById(remoteTasks, tasks);
+              categories = mergeListsById(remoteCategories, categories);
+              settings = Object.assign({}, remoteSettings, settings);
+              // Save merged data to localStorage
               saveTasks({ skipRemote: true });
               saveCategories({ skipRemote: true });
               saveSettings({ skipRemote: true });
+              // Sync merged data back to Firestore
+              try {
+                await userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
+                clearPendingSyncFlag();
+              } catch (err) {
+                console.log('Error syncing merged data to Firestore:', err);
+              }
               document.body.classList.toggle('dark', settings.theme === 'dark');
               renderToday();
               renderAll();
@@ -2227,9 +2261,13 @@ To use: copy this entire file into a .html file and open in a modern browser.
               unsubscribeDoc = userDocRef.onSnapshot((snapshot) => {
                 if (!snapshot.exists) return;
                 const remoteData = snapshot.data() || {};
-                tasks = Array.isArray(remoteData.tasks) ? remoteData.tasks : [];
-                categories = Array.isArray(remoteData.categories) ? remoteData.categories : defaultCategories.slice();
+                const remoteTasks = Array.isArray(remoteData.tasks) ? remoteData.tasks : [];
+                const remoteCategories = Array.isArray(remoteData.categories) ? remoteData.categories : defaultCategories.slice();
                 const remoteSettingsData = remoteData.settings || {};
+                // Merge remote changes with current local state
+                // This handles real-time updates from other devices
+                tasks = mergeListsById(remoteTasks, tasks);
+                categories = mergeListsById(remoteCategories, categories);
                 settings = Object.assign({}, settings, remoteSettingsData);
                 if (!settings.summaryTime) settings.summaryTime = '20:00';
                 if (!settings.theme) settings.theme = 'light';
@@ -2244,9 +2282,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
                 renderCompletedView();
                 renderSettings();
               });
-              if (pendingLocalChanges || hasPendingLocalSync()) {
-                scheduleCloudSync();
-              }
+              // Initial sync is already done above, so no need to schedule again
             } else {
               if (cloudSyncTimer) {
                 clearTimeout(cloudSyncTimer);
