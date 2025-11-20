@@ -103,20 +103,25 @@ To use: copy this entire file into a .html file and open in a modern browser.
       align-items: center;
       z-index: 100;
     }
-    nav button {
-      flex: 1;
-      background: none;
-      border: none;
-      color: var(--nav-text);
-      font-size: 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    nav button.active {
-      color: var(--primary-color);
-    }
+      nav button {
+        flex: 1;
+        background: none;
+        border: none;
+        color: var(--nav-text);
+        font-size: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      nav button.active {
+        color: var(--primary-color);
+      }
+      nav button:focus-visible {
+        outline: 2px solid var(--primary-color);
+        outline-offset: -2px;
+      }
     nav svg {
       width: 20px;
       height: 20px;
@@ -198,18 +203,19 @@ To use: copy this entire file into a .html file and open in a modern browser.
         margin-top: -8px;
         margin-bottom: 16px;
       }
-      .empty-state {
-        padding: 32px 16px;
-        text-align: center;
-        color: var(--muted-color);
-        border: 2px dashed rgba(0,0,0,0.08);
-        border-radius: 12px;
-        background: rgba(255,255,255,0.4);
-      }
-      .dark .empty-state {
-        border-color: rgba(255,255,255,0.15);
-        background: rgba(44,44,44,0.6);
-      }
+        .empty-state {
+          padding: 32px 16px;
+          text-align: center;
+          color: var(--muted-color);
+          border: 1px dashed rgba(0,0,0,0.12);
+          border-radius: 12px;
+          background: var(--card-bg);
+          box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .dark .empty-state {
+          border-color: rgba(255,255,255,0.2);
+          box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
+        }
       .segmented-control {
         display: inline-flex;
         background: var(--card-bg);
@@ -257,18 +263,19 @@ To use: copy this entire file into a .html file and open in a modern browser.
         display: inline-block;
       }
 
-    /* Task cards */
-    .task-card {
-      background: var(--card-bg);
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 12px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      transition: transform 0.2s;
-    }
+      /* Task cards */
+      .task-card {
+        background: var(--card-bg);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        transition: transform 0.2s;
+        cursor: pointer;
+      }
     .task-card:hover {
       transform: translateY(-2px);
     }
@@ -359,37 +366,44 @@ To use: copy this entire file into a .html file and open in a modern browser.
     }
 
     /* Buttons */
-    .btn {
-      padding: 10px 16px;
-      border: none;
-      border-radius: 6px;
-      font-size: 14px;
-      cursor: pointer;
-      transition: background 0.2s;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .btn-primary {
-      background: var(--primary-color);
-      color: #fff;
-    }
-    .btn-danger {
-      background: var(--danger-color);
-      color: #fff;
-    }
-    .btn-secondary {
-      background: #e0e0e0;
-      color: #333;
-    }
-    .dark .btn-secondary {
-      background: #444;
-      color: #fff;
-    }
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
+      .btn {
+        padding: 10px 16px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .btn-primary {
+        background: var(--primary-color);
+        color: #fff;
+      }
+      .btn-success {
+        background: var(--success-color);
+        color: #0f2a1f;
+      }
+      .btn-danger {
+        background: var(--danger-color);
+        color: #fff;
+      }
+      .btn-secondary {
+        background: #e0e0e0;
+        color: #333;
+      }
+      .dark .btn-secondary {
+        background: #444;
+        color: #fff;
+      }
+      .dark .btn-success {
+        color: #0f2a1f;
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
 
     /* Inputs */
     .input-group {
@@ -541,22 +555,23 @@ To use: copy this entire file into a .html file and open in a modern browser.
 
   <!-- Authentication overlay: shows login or signup before accessing the app -->
   <div id="auth-overlay" class="modal-overlay" style="display:none;">
-    <div class="modal">
-      <h2 id="auth-title">Login</h2>
-      <div class="input-group">
-        <label>Email</label>
-        <input type="email" id="auth-email" placeholder="you@example.com">
+      <div class="modal">
+        <h2 id="auth-title">Login</h2>
+        <div class="input-group">
+          <label>Email</label>
+          <input type="email" id="auth-email" placeholder="you@example.com">
+        </div>
+        <div class="input-group">
+          <label>Password</label>
+          <input type="password" id="auth-password" placeholder="••••••••">
+        </div>
+        <div id="auth-error" style="color:var(--danger-color);font-size:12px;margin-bottom:8px;"></div>
+        <div style="text-align:right;">
+          <button id="auth-submit" class="btn btn-primary">Login</button>
+        </div>
+        <p id="auth-toggle" style="font-size:12px;text-align:center;margin-top:8px;cursor:pointer;color:var(--primary-color);">Don't have an account? Sign up</p>
+        <button id="auth-offline" class="btn btn-secondary" style="width:100%;margin-top:8px;">Continue offline</button>
       </div>
-      <div class="input-group">
-        <label>Password</label>
-        <input type="password" id="auth-password" placeholder="••••••••">
-      </div>
-      <div id="auth-error" style="color:var(--danger-color);font-size:12px;margin-bottom:8px;"></div>
-      <div style="text-align:right;">
-        <button id="auth-submit" class="btn btn-primary">Login</button>
-      </div>
-      <p id="auth-toggle" style="font-size:12px;text-align:center;margin-top:8px;cursor:pointer;color:var(--primary-color);">Don't have an account? Sign up</p>
-    </div>
   </div>
     <div id="app">
       <!-- Today View -->
@@ -673,6 +688,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
       <p style="font-size:12px;color:var(--muted-color);margin-bottom:8px;">
         Use the sign-out button below to log out of your account. Your data will be saved online and available when you log back in on any device.
       </p>
+        <button id="sign-in-btn" class="btn btn-primary" style="width:100%;margin-bottom:8px;display:none;">Sign In</button>
       <button id="sign-out-btn" class="btn btn-danger" style="width:100%;margin-bottom:12px;">Sign Out</button>
     </section>
   </div>
@@ -823,12 +839,13 @@ To use: copy this entire file into a .html file and open in a modern browser.
       // has been removed because remote sync is now managed through an online database.
 
       // In-memory state
-      let tasks = [];
-      let categories = [];
-      let settings = {};
+    let tasks = [];
+    let categories = [];
+    let settings = {};
     let editingTaskId = null;
     let reminderTimer = null;
     let statusFilter = 'active';
+    let authOverlayDismissed = false;
 
       // Firebase configuration (replace with your own project credentials).
       // To enable cross-device synchronization, set up a Firebase project and add your configuration here.
@@ -863,27 +880,37 @@ To use: copy this entire file into a .html file and open in a modern browser.
       // replace the local tasks and refresh the UI. Note: this only works
       // across tabs in the same browser on the same device. There is no
       // cross-device backend available in this environment.
-      const syncChannel = new BroadcastChannel('memorymate_sync');
-      function broadcastUpdate() {
+        let syncChannel = null;
         try {
-          syncChannel.postMessage({ type: 'syncUpdate', tasks });
-        } catch (e) {
-          // ignore if channel not available
+          if (typeof BroadcastChannel !== 'undefined') {
+            syncChannel = new BroadcastChannel('memorymate_sync');
+          }
+        } catch (err) {
+          console.warn('BroadcastChannel unavailable:', err);
         }
-      }
-      syncChannel.onmessage = (event) => {
-        if (event.data && event.data.type === 'syncUpdate') {
-          tasks = event.data.tasks || [];
-          // Persist without re-broadcasting to avoid loops
-          localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-          // Refresh UI
-        renderAll();
-        renderToday();
-        renderCategoryView();
-        renderWeeklyReview();
-        renderCompletedView();
+        function broadcastUpdate() {
+          if (!syncChannel) return;
+          try {
+            syncChannel.postMessage({ type: 'syncUpdate', tasks });
+          } catch (e) {
+            // ignore if channel not available
+          }
         }
-      };
+        if (syncChannel) {
+          syncChannel.onmessage = (event) => {
+            if (event.data && event.data.type === 'syncUpdate') {
+              tasks = event.data.tasks || [];
+              // Persist without re-broadcasting to avoid loops
+              localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+              // Refresh UI
+              renderAll();
+              renderToday();
+              renderCategoryView();
+              renderWeeklyReview();
+              renderCompletedView();
+            }
+          };
+        }
 
       // Default categories
       const defaultCategories = [
@@ -930,8 +957,9 @@ To use: copy this entire file into a .html file and open in a modern browser.
           categories = defaultCategories;
         }
       }
-      function saveCategories() {
-        localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+        function saveCategories() {
+          localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+          refreshCategorySelects();
         // Save to Firestore when logged in
         if (userDocRef) {
           try {
@@ -1111,15 +1139,48 @@ To use: copy this entire file into a .html file and open in a modern browser.
       }
 
       /* ---------- Rendering Functions ---------- */
-      function renderCategoriesOptions(selectEl) {
-        selectEl.innerHTML = '';
-        categories.forEach(cat => {
-          const opt = document.createElement('option');
-          opt.value = cat.id;
-          opt.textContent = cat.name;
-          selectEl.appendChild(opt);
-        });
-      }
+        function renderCategoriesOptions(selectEl, includePlaceholder = false) {
+          if (!selectEl) return;
+          selectEl.innerHTML = '';
+          if (includePlaceholder) {
+            const emptyOpt = document.createElement('option');
+            emptyOpt.value = '';
+            emptyOpt.textContent = 'No category';
+            selectEl.appendChild(emptyOpt);
+          }
+          categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat.id;
+            opt.textContent = cat.name;
+            selectEl.appendChild(opt);
+          });
+        }
+        function refreshCategorySelects() {
+          const modalSelect = document.getElementById('task-category');
+          if (modalSelect) {
+            const currentModal = modalSelect.value;
+            renderCategoriesOptions(modalSelect, true);
+            const hasModalValue = Array.from(modalSelect.options).some(opt => opt.value === currentModal);
+            if (hasModalValue) {
+              modalSelect.value = currentModal;
+            }
+          }
+          const filterSelect = document.getElementById('filter-category');
+          if (filterSelect) {
+            const current = filterSelect.value;
+            filterSelect.innerHTML = '<option value="">All Categories</option>';
+            categories.forEach(cat => {
+              const opt = document.createElement('option');
+              opt.value = cat.id;
+              opt.textContent = cat.name;
+              filterSelect.appendChild(opt);
+            });
+            const hasCurrent = Array.from(filterSelect.options).some(opt => opt.value === current);
+            if (hasCurrent) {
+              filterSelect.value = current;
+            }
+          }
+        }
       function renderToday() {
         const container = document.getElementById('today-tasks');
         const summaryEl = document.getElementById('today-summary');
@@ -1217,6 +1278,10 @@ To use: copy this entire file into a .html file and open in a modern browser.
       function renderCategoryView() {
         const container = document.getElementById('category-list');
         container.innerHTML = '';
+          if (!categories.length) {
+            renderEmptyState(container, 'No categories yet. Add one from Settings to start grouping tasks.');
+            return;
+          }
         categories.forEach(cat => {
           const catTasks = tasks.filter(t => t.category === cat.id);
           const section = document.createElement('div');
@@ -1373,14 +1438,15 @@ To use: copy this entire file into a .html file and open in a modern browser.
         if (settings.theme === 'dark') themeToggle.classList.add('active'); else themeToggle.classList.remove('active');
         // (removed remote URL input assignment; remote URL is now fixed and not editable)
         // Show or hide sign-out button depending on login status
-        const signOutBtn = document.getElementById('sign-out-btn');
-        if (signOutBtn) {
-          if (userDocRef) {
-            signOutBtn.style.display = '';
-          } else {
-            signOutBtn.style.display = 'none';
+          const signOutBtn = document.getElementById('sign-out-btn');
+          const signInBtn = document.getElementById('sign-in-btn');
+          const canSignIn = authSupported();
+          if (signOutBtn) {
+            signOutBtn.style.display = userDocRef ? '' : 'none';
           }
-        }
+          if (signInBtn) {
+            signInBtn.style.display = !userDocRef && canSignIn ? '' : 'none';
+          }
         // categories list
         const list = document.getElementById('settings-category-list');
         list.innerHTML = '';
@@ -1489,7 +1555,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
         const priEl = document.getElementById('task-priority');
         const repEl = document.getElementById('task-repeat');
         const nagEl = document.getElementById('task-nag');
-        renderCategoriesOptions(catEl);
+          renderCategoriesOptions(catEl, true);
         if (taskId) {
           document.getElementById('task-modal-title').textContent = 'Edit Task';
           const task = tasks.find(t => t.id === taskId);
@@ -1666,36 +1732,49 @@ To use: copy this entire file into a .html file and open in a modern browser.
         const desc = document.getElementById('task-description').value.trim();
         const date = document.getElementById('task-date').value;
         const time = document.getElementById('task-time').value;
-        const category = document.getElementById('task-category').value;
+          const category = document.getElementById('task-category').value || '';
         const priority = document.getElementById('task-priority').value;
         const repeat = document.getElementById('task-repeat').value;
         const nag = document.getElementById('task-nag').value;
-        const newTask = {
-          id: editingTaskId || uuid(),
-          title,
-          description: desc,
-          date,
-          time,
-          category,
-          priority,
-          repeat,
-          nag,
-          completed: false,
-          completedAt: null,
-          nextReminder: null,
-          subtasks: editingTaskId ? (tasks.find(t => t.id === editingTaskId).subtasks || []) : [],
-          createdAt: new Date().toISOString()
-        };
-        const dueDT = combineDateTime(date, time);
-        if (dueDT) newTask.nextReminder = dueDT.getTime();
-        if (editingTaskId) {
-          // Update existing
-          tasks = tasks.map(t => t.id === editingTaskId ? newTask : t);
-        } else {
-          tasks.push(newTask);
-        }
+          const dueDT = combineDateTime(date, time);
+          if (editingTaskId) {
+            const existing = tasks.find(t => t.id === editingTaskId);
+            if (!existing) return;
+            existing.title = title;
+            existing.description = desc;
+            existing.date = date;
+            existing.time = time;
+            existing.category = category;
+            existing.priority = priority;
+            existing.repeat = repeat;
+            existing.nag = nag;
+            if (dueDT) {
+              existing.nextReminder = dueDT.getTime();
+            } else if (!existing.completed) {
+              existing.nextReminder = null;
+            }
+          } else {
+            const newTask = {
+              id: uuid(),
+              title,
+              description: desc,
+              date,
+              time,
+              category,
+              priority,
+              repeat,
+              nag,
+              completed: false,
+              completedAt: null,
+              nextReminder: dueDT ? dueDT.getTime() : null,
+              subtasks: [],
+              createdAt: new Date().toISOString()
+            };
+            tasks.push(newTask);
+          }
         saveTasks();
         closeTaskModal();
+          editingTaskId = null;
           renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview(); renderCompletedView();
       }
         function deleteTask(id) {
@@ -1787,69 +1866,6 @@ To use: copy this entire file into a .html file and open in a modern browser.
           openSummaryModal();
           localStorage.setItem(SUMMARY_SHOWN_KEY, todayStr);
         }
-      }
-
-      /**
-       * Fetch remote data from the default remote URL. If the request is successful,
-       * merge tasks, categories and settings from the remote file into the local
-       * state and persist them. This runs on app initialization to pull
-       * updates from the remote JSON file.
-       */
-      async function fetchRemote() {
-        const url = settings.remoteUrl || DEFAULT_REMOTE_URL;
-        if (!url) return;
-        try {
-          const res = await fetch(url + '?t=' + Date.now());
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          const data = await res.json();
-          if (data.tasks) tasks = data.tasks;
-          if (data.categories) categories = data.categories;
-          if (data.settings) {
-            // Merge remote settings but preserve remoteUrl and theme/time if not provided
-            settings.summaryTime = data.settings.summaryTime || settings.summaryTime;
-            settings.theme = data.settings.theme || settings.theme;
-          }
-          saveTasks(); saveCategories(); saveSettings();
-        // Refresh UI after pulling remote data
-        renderToday(); renderAll(); renderCategoryView(); renderWeeklyReview(); renderCompletedView(); renderSettings();
-          broadcastUpdate();
-        } catch (e) {
-          console.log('Remote fetch error:', e.message);
-        }
-      }
-
-      /**
-       * Attempt to sync current data to the remote location. The function sends
-       * a PUT request with the JSON payload to the remote URL. If this fails
-       * (likely due to cross-origin or authentication restrictions), it will
-       * fallback to downloading the JSON as a file named update.json so you can
-       * manually upload/commit it to your repository.
-       */
-      function syncToRemote() {
-        const url = settings.remoteUrl || DEFAULT_REMOTE_URL;
-        const payload = JSON.stringify({ tasks, categories, settings });
-        fetch(url, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: payload
-        }).then(res => {
-          if (res.ok) {
-            alert('Data synced to remote successfully.');
-          } else {
-            throw new Error('HTTP ' + res.status);
-          }
-        }).catch(err => {
-          // Fallback: download the JSON for manual upload
-          const blob = new Blob([payload], { type: 'application/json' });
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = 'update.json';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(a.href);
-          alert('Failed to sync to remote automatically. A file named update.json has been downloaded instead. Upload or commit this file to your repository to propagate changes.');
-        });
       }
 
       /* ---------- Event Listeners ---------- */
@@ -2010,51 +2026,75 @@ To use: copy this entire file into a .html file and open in a modern browser.
             }
           });
         }
+          const signInBtn = document.getElementById('sign-in-btn');
+          if (signInBtn) {
+            signInBtn.addEventListener('click', () => {
+              if (authSupported()) {
+                openAuthOverlay();
+              } else {
+                alert('Cloud sync is unavailable in this environment.');
+              }
+            });
+          }
       }
       function setActiveView(viewId) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById(viewId).classList.add('active');
         // Render specific view if needed
         if (viewId === 'today-view') renderToday();
-        if (viewId === 'all-view') {
-          // populate filter categories
-          const select = document.getElementById('filter-category');
-          select.innerHTML = '<option value="">All Categories</option>';
-          categories.forEach(cat => {
-            const opt = document.createElement('option');
-            opt.value = cat.id;
-            opt.textContent = cat.name;
-            select.appendChild(opt);
-          });
-          renderAll();
-        }
+          if (viewId === 'all-view') {
+            refreshCategorySelects();
+            renderAll();
+          }
         if (viewId === 'category-view') renderCategoryView();
       if (viewId === 'completed-view') renderCompletedView();
         if (viewId === 'weekly-view') renderWeeklyReview();
         if (viewId === 'settings-view') renderSettings();
       }
 
-      /* ---------- Initialization ---------- */
-      // Setup Firebase authentication and Firestore synchronization.
-      function setupAuthentication() {
-        // Always display the authentication overlay initially.
-        const overlay = document.getElementById('auth-overlay');
-        overlay.style.display = 'flex';
-        // Grab authentication overlay elements
-        // Note: overlay has already been referenced above
-        const titleEl = document.getElementById('auth-title');
-        const emailEl = document.getElementById('auth-email');
-        const passEl = document.getElementById('auth-password');
-        const submitBtn = document.getElementById('auth-submit');
-        const toggleEl = document.getElementById('auth-toggle');
-        const errorEl = document.getElementById('auth-error');
-        let isSignUp = false;
-        // Only bind Firebase handlers if authentication is available
-        if (!auth) {
-          // If auth is undefined, show an error and skip binding events
-          errorEl.textContent = 'Authentication unavailable. Please check your internet connection or Firebase configuration.';
-        } else {
-          // Toggle between login and sign-up modes
+        function authSupported() {
+          return !!(auth && db && typeof auth.onAuthStateChanged === 'function');
+        }
+        function openAuthOverlay() {
+          if (!authSupported()) return;
+          authOverlayDismissed = false;
+          const overlay = document.getElementById('auth-overlay');
+          if (overlay) overlay.style.display = 'flex';
+        }
+
+        /* ---------- Initialization ---------- */
+        // Setup Firebase authentication and Firestore synchronization.
+        function setupAuthentication() {
+          const overlay = document.getElementById('auth-overlay');
+          if (!overlay) return;
+          const titleEl = document.getElementById('auth-title');
+          const emailEl = document.getElementById('auth-email');
+          const passEl = document.getElementById('auth-password');
+          const submitBtn = document.getElementById('auth-submit');
+          const toggleEl = document.getElementById('auth-toggle');
+          const errorEl = document.getElementById('auth-error');
+          const offlineBtn = document.getElementById('auth-offline');
+          const authReady = authSupported();
+          let isSignUp = false;
+
+          if (!authReady) {
+            overlay.style.display = 'none';
+            if (offlineBtn) offlineBtn.style.display = 'none';
+            return;
+          }
+
+          overlay.style.display = 'flex';
+          if (offlineBtn) {
+            offlineBtn.onclick = () => {
+              authOverlayDismissed = true;
+              overlay.style.display = 'none';
+              errorEl.textContent = '';
+              if (unsubscribeDoc) unsubscribeDoc();
+              unsubscribeDoc = null;
+              userDocRef = null;
+              renderSettings();
+            };
+          }
           toggleEl.onclick = () => {
             isSignUp = !isSignUp;
             titleEl.textContent = isSignUp ? 'Sign Up' : 'Login';
@@ -2062,7 +2102,6 @@ To use: copy this entire file into a .html file and open in a modern browser.
             toggleEl.textContent = isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign up";
             errorEl.textContent = '';
           };
-          // Submit handler for login or sign-up
           submitBtn.onclick = () => {
             const email = emailEl.value.trim();
             const password = passEl.value.trim();
@@ -2071,62 +2110,46 @@ To use: copy this entire file into a .html file and open in a modern browser.
               errorEl.textContent = 'Please enter email and password.';
               return;
             }
-            if (isSignUp) {
-              auth.createUserWithEmailAndPassword(email, password).catch(err => {
-                errorEl.textContent = err.message;
-              });
-            } else {
-              auth.signInWithEmailAndPassword(email, password).catch(err => {
-                errorEl.textContent = err.message;
-              });
-            }
+            const action = isSignUp ? auth.createUserWithEmailAndPassword : auth.signInWithEmailAndPassword;
+            action.call(auth, email, password).catch(err => {
+              errorEl.textContent = err.message;
+            });
           };
-        }
-        // Sign-out button handler
-        const signOutBtn = document.getElementById('sign-out-btn');
-        if (signOutBtn) {
-          signOutBtn.onclick = () => {
-            if (auth) auth.signOut();
-          };
-        }
-        // Monitor auth state changes only if auth is available
-        if (auth && auth.onAuthStateChanged) {
+          const signOutBtn = document.getElementById('sign-out-btn');
+          if (signOutBtn) {
+            signOutBtn.onclick = () => {
+              if (auth) auth.signOut();
+            };
+          }
           auth.onAuthStateChanged(async (usr) => {
             if (usr) {
-              // Logged in: hide auth overlay
               overlay.style.display = 'none';
-              // Set up document reference for user
+              authOverlayDismissed = false;
               userDocRef = db.collection('users').doc(usr.uid);
-              // Ensure document exists
               const docSnap = await userDocRef.get();
               if (!docSnap.exists) {
                 await userDocRef.set({ tasks: [], categories: defaultCategories, settings: { summaryTime: '20:00', theme: 'light' } });
               }
-              // Load user data from Firestore
               const dataSnap = await userDocRef.get();
               const data = dataSnap.data() || {};
               tasks = data.tasks || [];
               categories = data.categories || defaultCategories.slice();
               settings.summaryTime = data.settings && data.settings.summaryTime ? data.settings.summaryTime : settings.summaryTime;
               settings.theme = data.settings && data.settings.theme ? data.settings.theme : settings.theme;
-              // Persist to local storage
               saveTasks();
               saveCategories();
               saveSettings();
-              // Apply theme and refresh UI
-        document.body.classList.toggle('dark', settings.theme === 'dark');
-        renderToday();
-        renderAll();
-        renderCategoryView();
-        renderWeeklyReview();
-        renderCompletedView();
-        renderSettings();
-              // Subscribe to document changes to sync in real-time
+              document.body.classList.toggle('dark', settings.theme === 'dark');
+              renderToday();
+              renderAll();
+              renderCategoryView();
+              renderWeeklyReview();
+              renderCompletedView();
+              renderSettings();
               if (unsubscribeDoc) unsubscribeDoc();
               unsubscribeDoc = userDocRef.onSnapshot((snapshot) => {
                 if (!snapshot.exists) return;
                 const remoteData = snapshot.data();
-                // Update local state
                 tasks = remoteData.tasks || [];
                 categories = remoteData.categories || defaultCategories.slice();
                 settings.summaryTime = remoteData.settings && remoteData.settings.summaryTime ? remoteData.settings.summaryTime : settings.summaryTime;
@@ -2134,25 +2157,6 @@ To use: copy this entire file into a .html file and open in a modern browser.
                 saveTasks();
                 saveCategories();
                 saveSettings();
-                  document.body.classList.toggle('dark', settings.theme === 'dark');
-                  renderToday();
-                  renderAll();
-                  renderCategoryView();
-                  renderWeeklyReview();
-                  renderCompletedView();
-                  renderSettings();
-              });
-            } else {
-              // Logged out: show overlay and clear reference
-              overlay.style.display = 'flex';
-              userDocRef = null;
-              if (unsubscribeDoc) unsubscribeDoc();
-              unsubscribeDoc = null;
-              // When logged out, load data from local storage
-              loadTasks();
-              loadCategories();
-              loadSettings();
-              // Apply theme and refresh UI with local data
                 document.body.classList.toggle('dark', settings.theme === 'dark');
                 renderToday();
                 renderAll();
@@ -2160,10 +2164,27 @@ To use: copy this entire file into a .html file and open in a modern browser.
                 renderWeeklyReview();
                 renderCompletedView();
                 renderSettings();
+              });
+            } else {
+              userDocRef = null;
+              if (unsubscribeDoc) unsubscribeDoc();
+              unsubscribeDoc = null;
+              loadTasks();
+              loadCategories();
+              loadSettings();
+              document.body.classList.toggle('dark', settings.theme === 'dark');
+              renderToday();
+              renderAll();
+              renderCategoryView();
+              renderWeeklyReview();
+              renderCompletedView();
+              renderSettings();
+              if (!authOverlayDismissed) {
+                overlay.style.display = 'flex';
+              }
             }
           });
         }
-      }
       function init() {
         loadTasks();
         loadCategories();
@@ -2181,8 +2202,8 @@ To use: copy this entire file into a .html file and open in a modern browser.
         startReminderCheck();
         // Setup events
         addEventListeners();
-        // Prepare category select for add/edit
-        renderCategoriesOptions(document.getElementById('task-category'));
+          // Prepare category select for add/edit
+          refreshCategorySelects();
         // Setup authentication (Firebase) for online sync
         setupAuthentication();
       }
