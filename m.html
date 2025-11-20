@@ -634,6 +634,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
       let db = null;
       let userDocRef = null;
       let unsubscribeDoc = null;
+      let suppressRemoteSave = false;
       if (typeof firebase !== 'undefined') {
         try {
           firebase.initializeApp(firebaseConfig);
@@ -694,12 +695,13 @@ To use: copy this entire file into a .html file and open in a modern browser.
         } catch (e) { tasks = []; }
       }
       // Save tasks to localStorage
-      function saveTasks() {
+      function saveTasks(options = {}) {
+        const skipRemote = suppressRemoteSave || options.skipRemote;
         localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
         // broadcast update to other tabs/windows
         broadcastUpdate();
         // Save tasks, categories and settings to Firestore when logged in
-        if (userDocRef) {
+        if (userDocRef && !skipRemote) {
           try {
             userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
           } catch (err) {
@@ -716,10 +718,11 @@ To use: copy this entire file into a .html file and open in a modern browser.
           categories = defaultCategories;
         }
       }
-      function saveCategories() {
+      function saveCategories(options = {}) {
+        const skipRemote = suppressRemoteSave || options.skipRemote;
         localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
         // Save to Firestore when logged in
-        if (userDocRef) {
+        if (userDocRef && !skipRemote) {
           try {
             userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
           } catch (err) {
@@ -738,10 +741,11 @@ To use: copy this entire file into a .html file and open in a modern browser.
         }
         // Removed remoteUrl key: synchronization is managed via Firebase.
       }
-      function saveSettings() {
+      function saveSettings(options = {}) {
+        const skipRemote = suppressRemoteSave || options.skipRemote;
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
         // Save to Firestore when logged in
-        if (userDocRef) {
+        if (userDocRef && !skipRemote) {
           try {
             userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
           } catch (err) {
@@ -1681,77 +1685,81 @@ To use: copy this entire file into a .html file and open in a modern browser.
             if (auth) auth.signOut();
           };
         }
-        // Monitor auth state changes only if auth is available
-        if (auth && auth.onAuthStateChanged) {
-          auth.onAuthStateChanged(async (usr) => {
-            if (usr) {
-              // Logged in: hide auth overlay
-              overlay.style.display = 'none';
-              // Set up document reference for user
-              userDocRef = db.collection('users').doc(usr.uid);
-              // Ensure document exists
-              const docSnap = await userDocRef.get();
-              if (!docSnap.exists) {
-                await userDocRef.set({ tasks: [], categories: defaultCategories, settings: { summaryTime: '20:00', theme: 'light' } });
-              }
-              // Load user data from Firestore
-              const dataSnap = await userDocRef.get();
-              const data = dataSnap.data() || {};
-              tasks = data.tasks || [];
-              categories = data.categories || defaultCategories.slice();
-              settings.summaryTime = data.settings && data.settings.summaryTime ? data.settings.summaryTime : settings.summaryTime;
-              settings.theme = data.settings && data.settings.theme ? data.settings.theme : settings.theme;
-              // Persist to local storage
-              saveTasks();
-              saveCategories();
-              saveSettings();
-              // Apply theme and refresh UI
-              document.body.classList.toggle('dark', settings.theme === 'dark');
-              renderToday();
-              renderAll();
-              renderCategoryView();
-              renderWeeklyReview();
-              renderSettings();
-              // Subscribe to document changes to sync in real-time
-              if (unsubscribeDoc) unsubscribeDoc();
-              unsubscribeDoc = userDocRef.onSnapshot((snapshot) => {
-                if (!snapshot.exists) return;
-                const remoteData = snapshot.data();
-                // Update local state
-                tasks = remoteData.tasks || [];
-                categories = remoteData.categories || defaultCategories.slice();
-                settings.summaryTime = remoteData.settings && remoteData.settings.summaryTime ? remoteData.settings.summaryTime : settings.summaryTime;
-                settings.theme = remoteData.settings && remoteData.settings.theme ? remoteData.settings.theme : settings.theme;
-                saveTasks();
-                saveCategories();
-                saveSettings();
+          // Monitor auth state changes only if auth is available
+          if (auth && auth.onAuthStateChanged) {
+            auth.onAuthStateChanged(async (usr) => {
+              if (usr) {
+                // Logged in: hide auth overlay
+                overlay.style.display = 'none';
+                // Set up document reference for user
+                userDocRef = db.collection('users').doc(usr.uid);
+                // Ensure document exists
+                const docSnap = await userDocRef.get();
+                if (!docSnap.exists) {
+                  await userDocRef.set({ tasks: [], categories: defaultCategories, settings: { summaryTime: '20:00', theme: 'light' } });
+                }
+                // Load user data from Firestore
+                const dataSnap = await userDocRef.get();
+                const data = dataSnap.data() || {};
+                tasks = data.tasks || [];
+                categories = data.categories || defaultCategories.slice();
+                settings.summaryTime = data.settings && data.settings.summaryTime ? data.settings.summaryTime : settings.summaryTime;
+                settings.theme = data.settings && data.settings.theme ? data.settings.theme : settings.theme;
+                // Persist to local storage without echoing back to Firestore
+                suppressRemoteSave = true;
+                saveTasks({ skipRemote: true });
+                saveCategories({ skipRemote: true });
+                saveSettings({ skipRemote: true });
+                suppressRemoteSave = false;
+                // Apply theme and refresh UI
                 document.body.classList.toggle('dark', settings.theme === 'dark');
                 renderToday();
                 renderAll();
                 renderCategoryView();
                 renderWeeklyReview();
                 renderSettings();
-              });
-            } else {
-              // Logged out: show overlay and clear reference
-              overlay.style.display = 'flex';
-              userDocRef = null;
-              if (unsubscribeDoc) unsubscribeDoc();
-              unsubscribeDoc = null;
-              // When logged out, load data from local storage
-              loadTasks();
-              loadCategories();
-              loadSettings();
-              // Apply theme and refresh UI with local data
-              document.body.classList.toggle('dark', settings.theme === 'dark');
-              renderToday();
-              renderAll();
-              renderCategoryView();
-              renderWeeklyReview();
-              renderSettings();
-            }
-          });
-        }
+                // Subscribe to document changes to sync in real-time
+                if (unsubscribeDoc) unsubscribeDoc();
+                unsubscribeDoc = userDocRef.onSnapshot((snapshot) => {
+                  if (!snapshot.exists) return;
+                  const remoteData = snapshot.data();
+                  // Update local state
+                  tasks = remoteData.tasks || [];
+                  categories = remoteData.categories || defaultCategories.slice();
+                  settings.summaryTime = remoteData.settings && remoteData.settings.summaryTime ? remoteData.settings.summaryTime : settings.summaryTime;
+                  settings.theme = remoteData.settings && remoteData.settings.theme ? remoteData.settings.theme : settings.theme;
+                  suppressRemoteSave = true;
+                  saveTasks({ skipRemote: true });
+                  saveCategories({ skipRemote: true });
+                  saveSettings({ skipRemote: true });
+                  suppressRemoteSave = false;
+                  document.body.classList.toggle('dark', settings.theme === 'dark');
+                  renderToday();
+                  renderAll();
+                  renderCategoryView();
+                  renderWeeklyReview();
+                  renderSettings();
+                });
+              } else {
+                // Logged out: show overlay and clear reference
+                overlay.style.display = 'flex';
+                userDocRef = null;
+                if (unsubscribeDoc) unsubscribeDoc();
+                unsubscribeDoc = null;
+                // When logged out, load data from local storage
+                loadTasks();
+                loadCategories();
+                loadSettings();
+                // Apply theme and refresh UI with local data
+                document.body.classList.toggle('dark', settings.theme === 'dark');
+                renderToday();
+                renderAll();
+                renderCategoryView();
+                renderWeeklyReview();
+                renderSettings();
+              }
+            });
+          }
       }
       function init() {
         loadTasks();
