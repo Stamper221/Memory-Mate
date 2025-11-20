@@ -708,11 +708,18 @@ To use: copy this entire file into a .html file and open in a modern browser.
               tasks: tasks, 
               categories: categories, 
               settings: settings 
-            }, { merge: true }).catch(err => {
-              console.error('Error saving to Firestore:', err);
+            }, { merge: true }).then(() => {
+              // Successfully saved to Firestore - sync will happen via onSnapshot
+              console.log('Tasks saved to Firestore successfully');
+            }).catch(err => {
+              console.error('Error saving tasks to Firestore:', err);
+              // Fallback to localStorage if Firestore save fails
+              localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
             });
           } catch (err) {
-            console.error('Error saving to Firestore:', err);
+            console.error('Error saving tasks to Firestore:', err);
+            // Fallback to localStorage if Firestore save fails
+            localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
           }
         } else if (!userDocRef) {
           // Only save to localStorage when not logged in
@@ -740,11 +747,18 @@ To use: copy this entire file into a .html file and open in a modern browser.
               tasks: tasks, 
               categories: categories, 
               settings: settings 
-            }, { merge: true }).catch(err => {
-              console.error('Error saving to Firestore:', err);
+            }, { merge: true }).then(() => {
+              // Successfully saved to Firestore - sync will happen via onSnapshot
+              console.log('Categories saved to Firestore successfully');
+            }).catch(err => {
+              console.error('Error saving categories to Firestore:', err);
+              // Fallback to localStorage if Firestore save fails
+              localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
             });
           } catch (err) {
-            console.error('Error saving to Firestore:', err);
+            console.error('Error saving categories to Firestore:', err);
+            // Fallback to localStorage if Firestore save fails
+            localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
           }
         } else if (!userDocRef) {
           // Only save to localStorage when not logged in
@@ -772,11 +786,18 @@ To use: copy this entire file into a .html file and open in a modern browser.
               tasks: tasks, 
               categories: categories, 
               settings: settings 
-            }, { merge: true }).catch(err => {
-              console.error('Error saving to Firestore:', err);
+            }, { merge: true }).then(() => {
+              // Successfully saved to Firestore - sync will happen via onSnapshot
+              console.log('Settings saved to Firestore successfully');
+            }).catch(err => {
+              console.error('Error saving settings to Firestore:', err);
+              // Fallback to localStorage if Firestore save fails
+              localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
             });
           } catch (err) {
-            console.error('Error saving to Firestore:', err);
+            console.error('Error saving settings to Firestore:', err);
+            // Fallback to localStorage if Firestore save fails
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
           }
         } else if (!userDocRef) {
           // Only save to localStorage when not logged in
@@ -1763,24 +1784,69 @@ To use: copy this entire file into a .html file and open in a modern browser.
                 // Subscribe to document changes for real-time cross-device sync
                 if (unsubscribeDoc) unsubscribeDoc();
                 
+                // Track if this is the first snapshot load (initial load, not a change)
+                // This prevents re-processing the data we just loaded above
+                let isInitialLoad = true;
+                
                 unsubscribeDoc = userDocRef.onSnapshot((snapshot) => {
-                  if (!snapshot.exists) return;
+                  if (!snapshot.exists) {
+                    // Document was deleted - reset to defaults
+                    tasks = [];
+                    categories = defaultCategories.slice();
+                    settings = { summaryTime: '20:00', theme: 'light' };
+                    renderToday();
+                    renderAll();
+                    renderCategoryView();
+                    renderWeeklyReview();
+                    renderSettings();
+                    return;
+                  }
                   
                   const remoteData = snapshot.data();
                   
+                  // Skip update if this is the initial load (we already loaded data above)
+                  // The first snapshot will contain the same data we just loaded, so we skip it
+                  if (isInitialLoad) {
+                    isInitialLoad = false;
+                    console.log('Initial Firestore snapshot received, skipping update (data already loaded)');
+                    return;
+                  }
+                  
+                  // Suppress remote save to prevent sync loops when updating from remote changes
+                  suppressRemoteSave = true;
+                  
                   // Update local state from remote changes (real-time sync across devices)
                   // This allows changes made on other devices to appear immediately
-                  tasks = remoteData.tasks || [];
-                  categories = remoteData.categories || defaultCategories.slice();
-                  settings = remoteData.settings || { summaryTime: '20:00', theme: 'light' };
+                  const newTasks = remoteData.tasks || [];
+                  const newCategories = remoteData.categories || defaultCategories.slice();
+                  const newSettings = remoteData.settings || { summaryTime: '20:00', theme: 'light' };
                   
-                  // Apply theme and refresh UI to reflect changes from other devices
-                  document.body.classList.toggle('dark', settings.theme === 'dark');
-                  renderToday();
-                  renderAll();
-                  renderCategoryView();
-                  renderWeeklyReview();
-                  renderSettings();
+                  // Only update if data actually changed to avoid unnecessary re-renders
+                  const tasksChanged = JSON.stringify(tasks) !== JSON.stringify(newTasks);
+                  const categoriesChanged = JSON.stringify(categories) !== JSON.stringify(newCategories);
+                  const settingsChanged = JSON.stringify(settings) !== JSON.stringify(newSettings);
+                  
+                  if (tasksChanged || categoriesChanged || settingsChanged) {
+                    console.log('Remote data changed, updating local state from Firestore');
+                    tasks = newTasks;
+                    categories = newCategories;
+                    settings = newSettings;
+                    
+                    // Apply theme and refresh UI to reflect changes from other devices
+                    document.body.classList.toggle('dark', settings.theme === 'dark');
+                    renderToday();
+                    renderAll();
+                    renderCategoryView();
+                    renderWeeklyReview();
+                    renderSettings();
+                  }
+                  
+                  // Re-enable remote saves after handling remote update
+                  suppressRemoteSave = false;
+                }, (error) => {
+                  console.error('Firestore snapshot error:', error);
+                  suppressRemoteSave = false;
+                  // On error, don't prevent future saves
                 });
               } else {
                 // Logged out: show overlay and clear reference
