@@ -65,32 +65,18 @@ To use: copy this entire file into a .html file and open in a modern browser.
       height: 100%;
     }
     body {
-      font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background: radial-gradient(circle at top, rgba(74,144,226,0.15), transparent 45%), var(--bg-color);
+      font-family: sans-serif;
+      background: var(--bg-color);
       color: var(--text-color);
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      transition: background 0.3s ease, color 0.3s ease;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background: linear-gradient(135deg, rgba(80,227,194,0.08), rgba(74,144,226,0.08));
-      opacity: 0.7;
-      z-index: -1;
     }
     /* Main container occupies available space minus bottom nav */
     #app {
       flex: 1;
       overflow-y: auto;
       padding-bottom: 60px; /* Space for nav */
-      -webkit-overflow-scrolling: touch;
-      transform: translateZ(0);
     }
 
     /* Navigation bar */
@@ -107,25 +93,20 @@ To use: copy this entire file into a .html file and open in a modern browser.
       align-items: center;
       z-index: 100;
     }
-      nav button {
-        flex: 1;
-        background: none;
-        border: none;
-        color: var(--nav-text);
-        font-size: 12px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-      }
-      nav button.active {
-        color: var(--primary-color);
-      }
-      nav button:focus-visible {
-        outline: 2px solid var(--primary-color);
-        outline-offset: -2px;
-      }
+    nav button {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--nav-text);
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    nav button.active {
+      color: var(--primary-color);
+    }
     nav svg {
       width: 20px;
       height: 20px;
@@ -139,151 +120,30 @@ To use: copy this entire file into a .html file and open in a modern browser.
       padding: 16px;
       max-width: 600px;
       margin: 0 auto;
-      transform: translateZ(0);
     }
     section.view.active {
       display: block;
       animation: fadeIn 0.2s ease;
     }
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
 
-      .view-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 16px;
-        flex-wrap: wrap;
-      }
-      .view-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-      .view-header .eyebrow {
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--muted-color);
-        margin-bottom: 4px;
-      }
-      .summary-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 12px;
-        margin-bottom: 16px;
-      }
-      .summary-card {
-        background: rgba(255,255,255,0.7);
-        border-radius: 10px;
-        padding: 12px;
-        border: 1px solid rgba(0,0,0,0.05);
-        transition: box-shadow 0.2s ease;
-        transform: translateZ(0);
-      }
-      .dark .summary-card {
-        background: rgba(44,44,44,0.8);
-        border-color: rgba(255,255,255,0.08);
-      }
-      .summary-card:hover {
-        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-      }
-      .summary-card h3 {
-        font-size: 13px;
-        color: var(--muted-color);
-        font-weight: 600;
-        margin-bottom: 6px;
-      }
-      .summary-card p {
-        font-size: 24px;
-        font-weight: 700;
-      }
-      .view-subtext {
-        font-size: 13px;
-        color: var(--muted-color);
-        margin-top: -8px;
-        margin-bottom: 16px;
-      }
-        .empty-state {
-          padding: 32px 16px;
-          text-align: center;
-          color: var(--muted-color);
-          border: 1px dashed rgba(0,0,0,0.12);
-          border-radius: 12px;
-          background: var(--card-bg);
-          box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
-        }
-        .dark .empty-state {
-          border-color: rgba(255,255,255,0.2);
-          box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
-        }
-      .segmented-control {
-        display: inline-flex;
-        background: var(--card-bg);
-        border-radius: 999px;
-        padding: 4px;
-        gap: 4px;
-        border: 1px solid rgba(0,0,0,0.05);
-        margin-bottom: 12px;
-      }
-      .dark .segmented-control {
-        border-color: rgba(255,255,255,0.1);
-      }
-      .segmented-control button {
-        border: none;
-        background: transparent;
-        padding: 6px 14px;
-        border-radius: 999px;
-        font-size: 12px;
-        color: var(--muted-color);
-        cursor: pointer;
-        transition: background 0.2s ease, color 0.2s ease;
-      }
-      .segmented-control button.active {
-        background: var(--primary-color);
-        color: #fff;
-      }
-      .timeline-group {
-        margin-bottom: 20px;
-      }
-      .timeline-header {
-        font-size: 11px;
-        color: var(--muted-color);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-bottom: 8px;
-      }
-      .timeline-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--primary-color);
-        display: inline-block;
-      }
-
-      /* Task cards */
-      .task-card {
-        background: var(--card-bg);
-        border-radius: 8px;
-        padding: 12px;
-        margin-bottom: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        transition: box-shadow 0.2s ease;
-        cursor: pointer;
-        transform: translateZ(0);
-        backface-visibility: hidden;
-      }
+    /* Task cards */
+    .task-card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      transition: transform 0.2s;
+    }
     .task-card:hover {
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
     }
     .task-icon {
       width: 20px;
@@ -299,59 +159,13 @@ To use: copy this entire file into a .html file and open in a modern browser.
       font-size: 15px;
       font-weight: 600;
     }
-      .task-meta {
-        font-size: 11px;
-        color: var(--muted-color);
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 4px;
-      }
-      .task-card.completed {
-        opacity: 0.75;
-      }
-      .task-card.completed .task-title {
-        text-decoration: line-through;
-        color: var(--muted-color);
-      }
-      .task-card .task-actions {
-        display: flex;
-        gap: 6px;
-        margin-top: 8px;
-      }
-      .task-quick-action {
-        border: none;
-        background: rgba(0,0,0,0.05);
-        color: var(--text-color);
-        font-size: 11px;
-        padding: 6px 10px;
-        border-radius: 999px;
-        cursor: pointer;
-        transition: background 0.2s ease;
-      }
-      .task-quick-action:hover {
-        background: rgba(0,0,0,0.08);
-      }
-      .dark .task-quick-action {
-        background: rgba(255,255,255,0.1);
-        color: #fff;
-      }
-      .dark .task-quick-action:hover {
-        background: rgba(255,255,255,0.15);
-      }
-      .status-pill {
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        background: rgba(0,0,0,0.05);
-        color: var(--muted-color);
-        padding: 2px 8px;
-        border-radius: 999px;
-      }
-      .status-pill.success {
-        background: rgba(80,227,194,0.2);
-        color: var(--success-color);
-      }
+    .task-meta {
+      font-size: 11px;
+      color: var(--muted-color);
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
     .priority-low { color: var(--success-color); }
     .priority-medium { color: var(--warning-color); }
     .priority-high { color: var(--danger-color); }
@@ -372,44 +186,37 @@ To use: copy this entire file into a .html file and open in a modern browser.
     }
 
     /* Buttons */
-      .btn {
-        padding: 10px 16px;
-        border: none;
-        border-radius: 6px;
-        font-size: 14px;
-        cursor: pointer;
-        transition: background 0.2s;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .btn-primary {
-        background: var(--primary-color);
-        color: #fff;
-      }
-      .btn-success {
-        background: var(--success-color);
-        color: #0f2a1f;
-      }
-      .btn-danger {
-        background: var(--danger-color);
-        color: #fff;
-      }
-      .btn-secondary {
-        background: #e0e0e0;
-        color: #333;
-      }
-      .dark .btn-secondary {
-        background: #444;
-        color: #fff;
-      }
-      .dark .btn-success {
-        color: #0f2a1f;
-      }
-      .btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-primary {
+      background: var(--primary-color);
+      color: #fff;
+    }
+    .btn-danger {
+      background: var(--danger-color);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #e0e0e0;
+      color: #333;
+    }
+    .dark .btn-secondary {
+      background: #444;
+      color: #fff;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
 
     /* Inputs */
     .input-group {
@@ -561,87 +368,51 @@ To use: copy this entire file into a .html file and open in a modern browser.
 
   <!-- Authentication overlay: shows login or signup before accessing the app -->
   <div id="auth-overlay" class="modal-overlay" style="display:none;">
-      <div class="modal">
-        <h2 id="auth-title">Login</h2>
-        <div class="input-group">
-          <label>Email</label>
-          <input type="email" id="auth-email" placeholder="you@example.com">
-        </div>
-        <div class="input-group">
-          <label>Password</label>
-          <input type="password" id="auth-password" placeholder="••••••••">
-        </div>
-        <div id="auth-error" style="color:var(--danger-color);font-size:12px;margin-bottom:8px;"></div>
-        <div style="text-align:right;">
-          <button id="auth-submit" class="btn btn-primary">Login</button>
-        </div>
-        <p id="auth-toggle" style="font-size:12px;text-align:center;margin-top:8px;cursor:pointer;color:var(--primary-color);">Don't have an account? Sign up</p>
-        <button id="auth-offline" class="btn btn-secondary" style="width:100%;margin-top:8px;">Continue offline</button>
+    <div class="modal">
+      <h2 id="auth-title">Login</h2>
+      <div class="input-group">
+        <label>Email</label>
+        <input type="email" id="auth-email" placeholder="you@example.com">
       </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="auth-password" placeholder="••••••••">
+      </div>
+      <div id="auth-error" style="color:var(--danger-color);font-size:12px;margin-bottom:8px;"></div>
+      <div style="text-align:right;">
+        <button id="auth-submit" class="btn btn-primary">Login</button>
+      </div>
+      <p id="auth-toggle" style="font-size:12px;text-align:center;margin-top:8px;cursor:pointer;color:var(--primary-color);">Don't have an account? Sign up</p>
+    </div>
   </div>
-    <div id="app">
-      <!-- Today View -->
-      <section id="today-view" class="view active">
-        <div class="view-header">
-          <div>
-            <p class="eyebrow">Focus</p>
-            <h1>Today</h1>
-          </div>
-          <div class="view-actions">
-            <button id="today-quick-add" class="btn btn-primary" style="white-space:nowrap;">+ Quick Add</button>
-          </div>
-        </div>
-        <p id="today-subtitle" class="view-subtext"></p>
-        <div id="today-summary" class="summary-grid"></div>
-        <div id="today-tasks"></div>
-      </section>
+  <div id="app">
+    <!-- Today View -->
+    <section id="today-view" class="view active">
+      <h1>Today</h1>
+      <div id="today-tasks"></div>
+    </section>
     <!-- All Tasks View -->
     <section id="all-view" class="view">
-        <div class="view-header">
-          <div>
-            <p class="eyebrow">Everything</p>
-            <h1>All Tasks</h1>
-          </div>
-          <div class="view-actions">
-            <button id="goto-category-view" class="btn btn-secondary" style="white-space:nowrap;">Categories</button>
-          </div>
-        </div>
-        <p class="view-subtext">Use search and filters to focus on what matters.</p>
-        <div class="segmented-control" id="status-toggle">
-          <button data-status="active" class="active">Active</button>
-          <button data-status="all">All</button>
-          <button data-status="completed">Completed</button>
-        </div>
-        <div class="input-group">
-          <input type="text" id="search-input" placeholder="Search tasks...">
-        </div>
-        <div class="input-group">
-          <select id="filter-category">
-            <option value="">All Categories</option>
-          </select>
-        </div>
-        <div class="input-group">
-          <select id="filter-priority">
-            <option value="">All Priorities</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
-        </div>
+      <h1>All Tasks</h1>
+      <button id="goto-category-view" class="btn btn-secondary" style="margin-bottom:12px;">View by Category</button>
+      <div class="input-group">
+        <input type="text" id="search-input" placeholder="Search tasks...">
+      </div>
+      <div class="input-group">
+        <select id="filter-category">
+          <option value="">All Categories</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <select id="filter-priority">
+          <option value="">All Priorities</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
       <div id="all-tasks"></div>
     </section>
-      <!-- Completed View -->
-      <section id="completed-view" class="view">
-        <div class="view-header">
-          <div>
-            <p class="eyebrow">Wins</p>
-            <h1>Completed</h1>
-          </div>
-        </div>
-        <p class="view-subtext">Celebrate progress and learn from past work.</p>
-        <div id="completed-summary" class="summary-grid"></div>
-        <div id="completed-list"></div>
-      </section>
     <!-- Category View -->
     <section id="category-view" class="view">
       <h1 style="display:flex;align-items:center;justify-content:space-between;">
@@ -694,7 +465,6 @@ To use: copy this entire file into a .html file and open in a modern browser.
       <p style="font-size:12px;color:var(--muted-color);margin-bottom:8px;">
         Use the sign-out button below to log out of your account. Your data will be saved online and available when you log back in on any device.
       </p>
-        <button id="sign-in-btn" class="btn btn-primary" style="width:100%;margin-bottom:8px;display:none;">Sign In</button>
       <button id="sign-out-btn" class="btn btn-danger" style="width:100%;margin-bottom:12px;">Sign Out</button>
     </section>
   </div>
@@ -708,10 +478,6 @@ To use: copy this entire file into a .html file and open in a modern browser.
       <svg viewBox="0 0 24 24"><path d="M3 13h18v-2H3v2zm0 6h18v-2H3v2zm0-12v2h18V7H3z"></path></svg>
       <span>All</span>
     </button>
-      <button data-view="completed-view">
-        <svg viewBox="0 0 24 24"><path d="M9 16.2l-3.5-3.5L4 14.2l5 5 11-11-1.5-1.5z"></path></svg>
-        <span>Done</span>
-      </button>
     <button id="add-task-nav">
       <svg viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"></path></svg>
       <span>Add</span>
@@ -836,26 +602,20 @@ To use: copy this entire file into a .html file and open in a modern browser.
     // MemoryMate JavaScript logic
     (function() {
       // Data keys
-    const TASKS_KEY = 'mm_tasks';
-    const CATEGORIES_KEY = 'mm_categories';
-    const SETTINGS_KEY = 'mm_settings';
-    const SUMMARY_SHOWN_KEY = 'mm_summary_shown';
-    const PENDING_SYNC_KEY = 'mm_pending_cloud_sync';
+      const TASKS_KEY = 'mm_tasks';
+      const CATEGORIES_KEY = 'mm_categories';
+      const SETTINGS_KEY = 'mm_settings';
+      const SUMMARY_SHOWN_KEY = 'mm_summary_shown';
 
       // Remote synchronization via Firebase (no remote JSON). The DEFAULT_REMOTE_URL constant
       // has been removed because remote sync is now managed through an online database.
 
       // In-memory state
-    let tasks = [];
-    let categories = [];
-    let settings = {};
-    let editingTaskId = null;
-  let reminderTimer = null;
-  let cloudSyncTimer = null;
-    let statusFilter = 'active';
-    let authOverlayDismissed = false;
-    let isApplyingRemoteUpdate = false;
-    let lastLocalSyncTimestamp = null;
+      let tasks = [];
+      let categories = [];
+      let settings = {};
+      let editingTaskId = null;
+      let reminderTimer = null;
 
       // Firebase configuration (replace with your own project credentials).
       // To enable cross-device synchronization, set up a Firebase project and add your configuration here.
@@ -890,37 +650,26 @@ To use: copy this entire file into a .html file and open in a modern browser.
       // replace the local tasks and refresh the UI. Note: this only works
       // across tabs in the same browser on the same device. There is no
       // cross-device backend available in this environment.
-        let syncChannel = null;
+      const syncChannel = new BroadcastChannel('memorymate_sync');
+      function broadcastUpdate() {
         try {
-          if (typeof BroadcastChannel !== 'undefined') {
-            syncChannel = new BroadcastChannel('memorymate_sync');
-          }
-        } catch (err) {
-          console.warn('BroadcastChannel unavailable:', err);
+          syncChannel.postMessage({ type: 'syncUpdate', tasks });
+        } catch (e) {
+          // ignore if channel not available
         }
-        function broadcastUpdate() {
-          if (!syncChannel) return;
-          try {
-            syncChannel.postMessage({ type: 'syncUpdate', tasks });
-          } catch (e) {
-            // ignore if channel not available
-          }
+      }
+      syncChannel.onmessage = (event) => {
+        if (event.data && event.data.type === 'syncUpdate') {
+          tasks = event.data.tasks || [];
+          // Persist without re-broadcasting to avoid loops
+          localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+          // Refresh UI
+          renderAll();
+          renderToday();
+          renderCategoryView();
+          renderWeeklyReview();
         }
-        if (syncChannel) {
-          syncChannel.onmessage = (event) => {
-            if (event.data && event.data.type === 'syncUpdate') {
-              tasks = event.data.tasks || [];
-        // Persist without re-broadcasting to avoid loops
-        saveTasks({ skipRemote: true, skipBroadcast: true });
-              // Refresh UI
-              renderAll();
-              renderToday();
-              renderCategoryView();
-              renderWeeklyReview();
-              renderCompletedView();
-            }
-          };
-        }
+      };
 
       // Default categories
       const defaultCategories = [
@@ -933,107 +682,6 @@ To use: copy this entire file into a .html file and open in a modern browser.
         { id: 'later', name: 'For Later', color: '#95a5a6' }
       ];
 
-    /* ---------- Sync Helpers ---------- */
-    function markPendingSync() {
-      try {
-        localStorage.setItem(PENDING_SYNC_KEY, 'true');
-      } catch (err) {
-        console.warn('Unable to flag pending sync:', err);
-      }
-    }
-    function clearPendingSyncFlag() {
-      try {
-        localStorage.removeItem(PENDING_SYNC_KEY);
-      } catch (err) {
-        console.warn('Unable to clear pending sync flag:', err);
-      }
-    }
-    function hasPendingLocalSync() {
-      try {
-        return localStorage.getItem(PENDING_SYNC_KEY) === 'true';
-      } catch (err) {
-        return false;
-      }
-    }
-    function scheduleCloudSync() {
-      if (!userDocRef) return;
-      if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
-      cloudSyncTimer = setTimeout(() => {
-        pushStateToCloud();
-      }, 250);
-    }
-    async function syncStateToCloud(contextLabel = 'data') {
-      if (!userDocRef || isApplyingRemoteUpdate) return false;
-      const syncTimestamp = new Date().toISOString();
-      const payload = {
-        tasks,
-        categories,
-        settings,
-        lastSyncedAt: syncTimestamp
-      };
-      try {
-        await userDocRef.set(payload, { merge: true });
-        lastLocalSyncTimestamp = syncTimestamp;
-        clearPendingSyncFlag();
-        return true;
-      } catch (err) {
-        console.log(`Error saving ${contextLabel} to Firestore:`, err);
-        markPendingSync();
-        scheduleCloudSync();
-        return false;
-      }
-    }
-    async function pushStateToCloud() {
-      if (!userDocRef || !hasPendingLocalSync() || isApplyingRemoteUpdate) return;
-      try {
-        await syncStateToCloud('pending changes');
-      } finally {
-        cloudSyncTimer = null;
-      }
-    }
-    function mergeListsById(remoteList = [], localList = []) {
-      const map = new Map();
-      // First add all remote items
-      if (Array.isArray(remoteList)) {
-        remoteList.forEach(item => {
-          if (item && item.id) {
-            map.set(item.id, Object.assign({}, item));
-          }
-        });
-      }
-      // Then merge local items, keeping the newer version based on lastModified timestamp
-      if (Array.isArray(localList)) {
-        localList.forEach(item => {
-          if (item && item.id) {
-            const existing = map.get(item.id);
-            if (!existing) {
-              // New item, add it
-              map.set(item.id, Object.assign({}, item));
-            } else {
-              // Both exist, keep the one with the newer lastModified timestamp
-              // If no timestamp, use createdAt as fallback, or current time if neither exists
-              const remoteTime = existing.lastModified 
-                ? new Date(existing.lastModified).getTime() 
-                : (existing.createdAt ? new Date(existing.createdAt).getTime() : 0);
-              const localTime = item.lastModified 
-                ? new Date(item.lastModified).getTime() 
-                : (item.createdAt ? new Date(item.createdAt).getTime() : 0);
-              // If remote is newer, keep remote (from another device)
-              // If local is newer or equal, keep local (our recent edit)
-              if (remoteTime > localTime) {
-                // Remote is newer, keep remote
-                map.set(item.id, Object.assign({}, existing));
-              } else {
-                // Local is newer or equal, keep local
-                map.set(item.id, Object.assign({}, item));
-              }
-            }
-          }
-        });
-      }
-      return Array.from(map.values());
-    }
-
       /* ---------- Utility Functions ---------- */
       // Generate a simple unique ID
       function uuid() {
@@ -1043,39 +691,22 @@ To use: copy this entire file into a .html file and open in a modern browser.
       function loadTasks() {
         try {
           tasks = JSON.parse(localStorage.getItem(TASKS_KEY)) || [];
-          // Ensure all tasks have lastModified timestamp for sync
-          tasks.forEach(task => {
-            if (!task.lastModified) {
-              task.lastModified = task.createdAt || new Date().toISOString();
-            }
-          });
         } catch (e) { tasks = []; }
       }
-    // Save tasks to localStorage
-    async function saveTasks(options = {}) {
-      const { skipRemote = false, skipBroadcast = false } = options;
-      // Update lastModified timestamp for modified tasks
-      if (!isApplyingRemoteUpdate) {
-        tasks.forEach(task => {
-          if (!task.lastModified || task._localModified) {
-            task.lastModified = new Date().toISOString();
-            delete task._localModified;
-          }
-        });
-      }
-      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-      if (!skipBroadcast) {
+      // Save tasks to localStorage
+      function saveTasks() {
+        localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+        // broadcast update to other tabs/windows
         broadcastUpdate();
-      }
-      if (!skipRemote && !isApplyingRemoteUpdate) {
+        // Save tasks, categories and settings to Firestore when logged in
         if (userDocRef) {
-          await syncStateToCloud('tasks');
-        } else {
-          markPendingSync();
-          scheduleCloudSync();
+          try {
+            userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
+          } catch (err) {
+            console.log('Error saving tasks to Firestore:', err);
+          }
         }
       }
-    }
       // Load categories from localStorage or default
       function loadCategories() {
         try {
@@ -1085,19 +716,17 @@ To use: copy this entire file into a .html file and open in a modern browser.
           categories = defaultCategories;
         }
       }
-    async function saveCategories(options = {}) {
-      const { skipRemote = false } = options;
-      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
-      refreshCategorySelects();
-      if (!skipRemote && !isApplyingRemoteUpdate) {
+      function saveCategories() {
+        localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+        // Save to Firestore when logged in
         if (userDocRef) {
-          await syncStateToCloud('categories');
-        } else {
-          markPendingSync();
-          scheduleCloudSync();
+          try {
+            userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
+          } catch (err) {
+            console.log('Error saving categories to Firestore:', err);
+          }
         }
       }
-    }
       // Load settings from localStorage or default
       function loadSettings() {
         try {
@@ -1109,18 +738,17 @@ To use: copy this entire file into a .html file and open in a modern browser.
         }
         // Removed remoteUrl key: synchronization is managed via Firebase.
       }
-    async function saveSettings(options = {}) {
-      const { skipRemote = false } = options;
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-      if (!skipRemote && !isApplyingRemoteUpdate) {
+      function saveSettings() {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        // Save to Firestore when logged in
         if (userDocRef) {
-          await syncStateToCloud('settings');
-        } else {
-          markPendingSync();
-          scheduleCloudSync();
+          try {
+            userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
+          } catch (err) {
+            console.log('Error saving settings to Firestore:', err);
+          }
         }
       }
-    }
       // Format date/time strings for display
       function formatDate(dateStr) {
         // Parse date string as local date to avoid timezone offset issues when formatting.
@@ -1236,120 +864,34 @@ To use: copy this entire file into a .html file and open in a modern browser.
           default: return 0;
         }
       }
-      function taskSortValue(task) {
-        const due = combineDateTime(task.date, task.time);
-        if (due) return due.getTime();
-        if (task.completedAt) return new Date(task.completedAt).getTime();
-        if (task.createdAt) return new Date(task.createdAt).getTime();
-        return 0;
-      }
-      function getCompletionDate(task) {
-        if (task.completedAt) return new Date(task.completedAt);
-        const due = combineDateTime(task.date, task.time);
-        if (due) return due;
-        return task.createdAt ? new Date(task.createdAt) : null;
-      }
-      function getDueLabel(task) {
-        if (task.completed && task.completedAt) {
-          const d = new Date(task.completedAt);
-          const dateLabel = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-          const timeLabel = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-          return `Completed ${dateLabel} · ${timeLabel}`;
-        }
-        if (task.date) {
-          const dateLabel = formatDate(task.date);
-          const timeLabel = task.time ? formatTime(task.time) : '';
-          return `${dateLabel}${timeLabel ? ' · ' + timeLabel : ''}`;
-        }
-        return 'No due date';
-      }
-      function renderEmptyState(container, message) {
-        if (!container) return;
-        container.innerHTML = `<div class="empty-state">${message}</div>`;
-      }
 
       /* ---------- Rendering Functions ---------- */
-        function renderCategoriesOptions(selectEl, includePlaceholder = false) {
-          if (!selectEl) return;
-          selectEl.innerHTML = '';
-          if (includePlaceholder) {
-            const emptyOpt = document.createElement('option');
-            emptyOpt.value = '';
-            emptyOpt.textContent = 'No category';
-            selectEl.appendChild(emptyOpt);
-          }
-          categories.forEach(cat => {
-            const opt = document.createElement('option');
-            opt.value = cat.id;
-            opt.textContent = cat.name;
-            selectEl.appendChild(opt);
-          });
-        }
-        function refreshCategorySelects() {
-          const modalSelect = document.getElementById('task-category');
-          if (modalSelect) {
-            const currentModal = modalSelect.value;
-            renderCategoriesOptions(modalSelect, true);
-            const hasModalValue = Array.from(modalSelect.options).some(opt => opt.value === currentModal);
-            if (hasModalValue) {
-              modalSelect.value = currentModal;
-            }
-          }
-          const filterSelect = document.getElementById('filter-category');
-          if (filterSelect) {
-            const current = filterSelect.value;
-            filterSelect.innerHTML = '<option value="">All Categories</option>';
-            categories.forEach(cat => {
-              const opt = document.createElement('option');
-              opt.value = cat.id;
-              opt.textContent = cat.name;
-              filterSelect.appendChild(opt);
-            });
-            const hasCurrent = Array.from(filterSelect.options).some(opt => opt.value === current);
-            if (hasCurrent) {
-              filterSelect.value = current;
-            }
-          }
-        }
+      function renderCategoriesOptions(selectEl) {
+        selectEl.innerHTML = '';
+        categories.forEach(cat => {
+          const opt = document.createElement('option');
+          opt.value = cat.id;
+          opt.textContent = cat.name;
+          selectEl.appendChild(opt);
+        });
+      }
       function renderToday() {
         const container = document.getElementById('today-tasks');
-        const summaryEl = document.getElementById('today-summary');
-        const subtitleEl = document.getElementById('today-subtitle');
-        if (!container) return;
         container.innerHTML = '';
-        if (summaryEl) summaryEl.innerHTML = '';
-        const todays = tasks.filter(isToday);
-        const activeToday = todays.filter(t => !t.completed).sort((a,b) => taskSortValue(a) - taskSortValue(b));
-        const completedToday = todays.filter(t => t.completed);
-        if (subtitleEl) {
-          subtitleEl.textContent = todays.length
-            ? `${activeToday.length} active · ${completedToday.length} done today`
-            : 'No tasks scheduled for today. Add one to get started!';
+        const todayTasks = tasks.filter(isToday).sort((a,b) => {
+          const dtA = combineDateTime(a.date,a.time);
+          const dtB = combineDateTime(b.date,b.time);
+          return dtA - dtB;
+        });
+        if (todayTasks.length === 0) {
+          container.innerHTML = '<p>No tasks for today.</p>';
+          return;
         }
-        if (summaryEl) {
-          summaryEl.innerHTML = `
-            <div class="summary-card">
-              <h3>Total today</h3>
-              <p>${todays.length}</p>
-            </div>
-            <div class="summary-card">
-              <h3>Active</h3>
-              <p>${activeToday.length}</p>
-            </div>
-            <div class="summary-card">
-              <h3>Completed</h3>
-              <p>${completedToday.length}</p>
-            </div>
-          `;
-        }
-          if (activeToday.length === 0) {
-            renderEmptyState(container, 'No active tasks for today. Tap "+ Quick Add" to schedule something important.');
-            return;
-          }
+        // Group into morning, afternoon, evening
         const groups = { morning: [], afternoon: [], evening: [] };
-        activeToday.forEach(task => {
+        todayTasks.forEach(task => {
           const time = combineDateTime(task.date, task.time);
-          if (!task.time || !time) {
+          if (!task.time) {
             groups.afternoon.push(task);
           } else {
             const h = time.getHours();
@@ -1367,78 +909,43 @@ To use: copy this entire file into a .html file and open in a modern browser.
           }
         });
       }
-        function renderAll() {
-          const container = document.getElementById('all-tasks');
-          if (!container) return;
-          container.innerHTML = '';
-          let list = tasks.slice();
-          const searchEl = document.getElementById('search-input');
-          const categoryEl = document.getElementById('filter-category');
-          const priorityEl = document.getElementById('filter-priority');
-          const search = searchEl ? searchEl.value.toLowerCase() : '';
-          const catFilter = categoryEl ? categoryEl.value : '';
-          const priFilter = priorityEl ? priorityEl.value : '';
-          if (search) list = list.filter(t => t.title.toLowerCase().includes(search));
-          if (catFilter) list = list.filter(t => t.category === catFilter);
-          if (priFilter) list = list.filter(t => t.priority === priFilter);
-          if (statusFilter === 'active') list = list.filter(t => !t.completed);
-          if (statusFilter === 'completed') list = list.filter(t => t.completed);
-          if (list.length === 0) {
-            const emptyCopy = statusFilter === 'completed'
-              ? 'No completed tasks yet. Finish a task to see it here.'
-              : statusFilter === 'active'
-                ? 'Everything on your list is done. Nice work!'
-                : 'No tasks match the current filters.';
-            renderEmptyState(container, emptyCopy);
-            return;
-          }
-          if (statusFilter === 'completed') {
-            list.sort((a, b) => {
-              const aDate = getCompletionDate(a);
-              const bDate = getCompletionDate(b);
-              const aTime = aDate ? aDate.getTime() : 0;
-              const bTime = bDate ? bDate.getTime() : 0;
-              return bTime - aTime;
-            });
-          } else {
-            list.sort((a,b) => taskSortValue(a) - taskSortValue(b));
-          }
-          list.forEach(task => container.appendChild(createTaskCard(task)));
+      function renderAll() {
+        const container = document.getElementById('all-tasks');
+        container.innerHTML = '';
+        let list = tasks.slice();
+        const search = document.getElementById('search-input').value.toLowerCase();
+        const catFilter = document.getElementById('filter-category').value;
+        const priFilter = document.getElementById('filter-priority').value;
+        if (search) list = list.filter(t => t.title.toLowerCase().includes(search));
+        if (catFilter) list = list.filter(t => t.category === catFilter);
+        if (priFilter) list = list.filter(t => t.priority === priFilter);
+        if (list.length === 0) {
+          container.innerHTML = '<p>No tasks found.</p>';
+          return;
         }
+        list.sort((a,b) => {
+          const da = combineDateTime(a.date,a.time);
+          const db = combineDateTime(b.date,b.time);
+          return da - db;
+        });
+        list.forEach(task => container.appendChild(createTaskCard(task)));
+      }
       function renderCategoryView() {
         const container = document.getElementById('category-list');
         container.innerHTML = '';
-          if (!categories.length) {
-            renderEmptyState(container, 'No categories yet. Add one from Settings to start grouping tasks.');
-            return;
-          }
         categories.forEach(cat => {
           const catTasks = tasks.filter(t => t.category === cat.id);
           const section = document.createElement('div');
           const header = document.createElement('h2');
-            const activeCount = catTasks.filter(t => !t.completed).length;
-            const completedCount = catTasks.filter(t => t.completed).length;
-            header.textContent = cat.name;
+          header.textContent = `${cat.name} (${catTasks.length})`;
           section.appendChild(header);
-            const summary = document.createElement('p');
-            summary.className = 'view-subtext';
-            summary.textContent = `${activeCount} active · ${completedCount} completed`;
-            section.appendChild(summary);
-            const activeTasks = catTasks.filter(t => !t.completed);
-            if (activeTasks.length) {
-              activeTasks.forEach(task => section.appendChild(createTaskCard(task)));
-            } else {
-              const p = document.createElement('p');
-              p.className = 'view-subtext';
-              p.textContent = 'No active tasks in this category.';
-              section.appendChild(p);
-            }
-            if (completedCount) {
-              const completedHint = document.createElement('p');
-              completedHint.className = 'view-subtext';
-              completedHint.textContent = `View ${completedCount} completed task${completedCount === 1 ? '' : 's'} in the Completed tab.`;
-              section.appendChild(completedHint);
-            }
+          if (catTasks.length) {
+            catTasks.forEach(task => section.appendChild(createTaskCard(task)));
+          } else {
+            const p = document.createElement('p');
+            p.textContent = 'No tasks.';
+            section.appendChild(p);
+          }
           container.appendChild(section);
         });
       }
@@ -1463,73 +970,6 @@ To use: copy this entire file into a .html file and open in a modern browser.
           renderStats();
         }
       }
-        function renderCompletedView() {
-          const listEl = document.getElementById('completed-list');
-          const summaryEl = document.getElementById('completed-summary');
-          if (!listEl || !summaryEl) return;
-          listEl.innerHTML = '';
-          summaryEl.innerHTML = '';
-          const completedTasks = tasks.filter(t => t.completed);
-          if (!completedTasks.length) {
-            renderEmptyState(listEl, 'Complete a task to see it celebrated here.');
-            summaryEl.innerHTML = `
-              <div class="summary-card">
-                <h3>Completed</h3>
-                <p>0</p>
-              </div>
-            `;
-            return;
-          }
-          const weeklyDone = completedTasks.filter(completedLast7).length;
-          const highDone = completedTasks.filter(t => t.priority === 'high').length;
-          summaryEl.innerHTML = `
-            <div class="summary-card">
-              <h3>Total done</h3>
-              <p>${completedTasks.length}</p>
-            </div>
-            <div class="summary-card">
-              <h3>This week</h3>
-              <p>${weeklyDone}</p>
-            </div>
-            <div class="summary-card">
-              <h3>High priority</h3>
-              <p>${highDone}</p>
-            </div>
-          `;
-          const grouped = completedTasks.reduce((acc, task) => {
-            const date = getCompletionDate(task);
-            const key = date ? date.toISOString().split('T')[0] : 'undated';
-            if (!acc[key]) acc[key] = [];
-            acc[key].push(task);
-            return acc;
-          }, {});
-          const sortedKeys = Object.keys(grouped).sort((a, b) => {
-            if (a === 'undated') return 1;
-            if (b === 'undated') return -1;
-            return new Date(b) - new Date(a);
-          });
-          sortedKeys.forEach(key => {
-            const groupEl = document.createElement('div');
-            groupEl.className = 'timeline-group';
-            const header = document.createElement('div');
-            header.className = 'timeline-header';
-            const label = key === 'undated'
-              ? 'No completion date'
-              : new Date(key).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-            header.innerHTML = `<span class="timeline-dot"></span>${label}`;
-            groupEl.appendChild(header);
-            grouped[key]
-              .sort((a, b) => {
-                const aDate = getCompletionDate(a);
-                const bDate = getCompletionDate(b);
-                const aTime = aDate ? aDate.getTime() : 0;
-                const bTime = bDate ? bDate.getTime() : 0;
-                return bTime - aTime;
-              })
-              .forEach(task => groupEl.appendChild(createTaskCard(task)));
-            listEl.appendChild(groupEl);
-          });
-        }
 
       // Display aggregate statistics for tasks and categories
       function renderStats() {
@@ -1568,15 +1008,14 @@ To use: copy this entire file into a .html file and open in a modern browser.
         if (settings.theme === 'dark') themeToggle.classList.add('active'); else themeToggle.classList.remove('active');
         // (removed remote URL input assignment; remote URL is now fixed and not editable)
         // Show or hide sign-out button depending on login status
-          const signOutBtn = document.getElementById('sign-out-btn');
-          const signInBtn = document.getElementById('sign-in-btn');
-          const canSignIn = authSupported();
-          if (signOutBtn) {
-            signOutBtn.style.display = userDocRef ? '' : 'none';
+        const signOutBtn = document.getElementById('sign-out-btn');
+        if (signOutBtn) {
+          if (userDocRef) {
+            signOutBtn.style.display = '';
+          } else {
+            signOutBtn.style.display = 'none';
           }
-          if (signInBtn) {
-            signInBtn.style.display = !userDocRef && canSignIn ? '' : 'none';
-          }
+        }
         // categories list
         const list = document.getElementById('settings-category-list');
         list.innerHTML = '';
@@ -1603,7 +1042,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
             categories = categories.filter(c => c.id !== cat.id);
             tasks.forEach(t => { if (t.category === cat.id) t.category = ''; });
             saveCategories(); saveTasks();
-          renderSettings(); renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview(); renderCompletedView();
+            renderSettings(); renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview();
           };
           row.appendChild(span);
           row.appendChild(del);
@@ -1618,8 +1057,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
       function createTaskCard(task) {
         const card = document.createElement('div');
         card.className = 'task-card';
-        if (task.completed) card.classList.add('completed');
-        if (!task.completed && isOverdue(task)) card.classList.add('overdue');
+        if (isOverdue(task)) card.classList.add('overdue');
         const icon = document.createElement('div');
         icon.className = 'task-icon';
         const cat = categories.find(c => c.id === task.category);
@@ -1629,46 +1067,25 @@ To use: copy this entire file into a .html file and open in a modern browser.
         const title = document.createElement('div');
         title.className = 'task-title';
         title.textContent = task.title;
-        content.appendChild(title);
-        if (task.completed) {
-          const status = document.createElement('span');
-          status.className = 'status-pill success';
-          status.textContent = 'Completed';
-          content.appendChild(status);
-        }
         const meta = document.createElement('div');
         meta.className = 'task-meta';
-        const dueSpan = document.createElement('span');
-        dueSpan.textContent = getDueLabel(task);
-        meta.appendChild(dueSpan);
+        const date = combineDateTime(task.date, task.time);
+        meta.innerHTML = `${task.date ? formatDate(task.date) : ''} ${task.time ? formatTime(task.time) : ''}`;
         const priSpan = document.createElement('span');
         priSpan.textContent = task.priority;
         priSpan.className = `priority-${task.priority}`;
         meta.appendChild(priSpan);
-        if (!task.completed && isOverdue(task)) {
+        if (isOverdue(task)) {
           const o = document.createElement('span');
           o.textContent = 'Overdue';
           o.style.color = varGet('--danger-color');
           meta.appendChild(o);
         }
+        content.appendChild(title);
         content.appendChild(meta);
-        const actionRow = document.createElement('div');
-        actionRow.className = 'task-actions';
-        if (!task.completed) {
-          const doneBtn = document.createElement('button');
-          doneBtn.className = 'task-quick-action';
-          doneBtn.textContent = 'Mark done';
-          doneBtn.addEventListener('click', (event) => {
-            event.stopPropagation();
-            completeTask(task.id);
-          });
-          actionRow.appendChild(doneBtn);
-        }
-        if (actionRow.children.length) {
-          content.appendChild(actionRow);
-        }
         card.appendChild(icon);
         card.appendChild(content);
+        // Add event
         card.onclick = () => openTaskDetail(task.id);
         return card;
       }
@@ -1685,7 +1102,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
         const priEl = document.getElementById('task-priority');
         const repEl = document.getElementById('task-repeat');
         const nagEl = document.getElementById('task-nag');
-          renderCategoriesOptions(catEl, true);
+        renderCategoriesOptions(catEl);
         if (taskId) {
           document.getElementById('task-modal-title').textContent = 'Edit Task';
           const task = tasks.find(t => t.id === taskId);
@@ -1739,7 +1156,6 @@ To use: copy this entire file into a .html file and open in a modern browser.
           cb.checked = sub.completed;
           cb.onchange = () => {
             sub.completed = cb.checked;
-            task._localModified = true; // Flag to update timestamp
             saveTasks();
           };
           const span = document.createElement('span');
@@ -1764,7 +1180,6 @@ To use: copy this entire file into a .html file and open in a modern browser.
           const val = input.value.trim();
           if (!val) return;
           task.subtasks.push({ id: uuid(), title: val, completed: false });
-          task._localModified = true; // Flag to update timestamp
           input.value = '';
           saveTasks();
           openTaskDetail(taskId); // rerender
@@ -1807,7 +1222,6 @@ To use: copy this entire file into a .html file and open in a modern browser.
             if (!task) return;
             const nextTime = addMinutes(new Date(), mins);
             task.nextReminder = nextTime.getTime();
-            task._localModified = true; // Flag to update timestamp
             saveTasks();
             snooze.classList.remove('active');
           };
@@ -1848,11 +1262,10 @@ To use: copy this entire file into a .html file and open in a modern browser.
             task.date = tomorrow.toISOString().split('T')[0];
             // keep time same
             task.nextReminder = combineDateTime(task.date, task.time) ? combineDateTime(task.date, task.time).getTime() : null;
-            task._localModified = true; // Flag to update timestamp
           });
           saveTasks();
           document.getElementById('summary-modal').classList.remove('active');
-        renderAll(); renderToday(); renderWeeklyReview(); renderCategoryView(); renderCompletedView();
+          renderAll(); renderToday(); renderWeeklyReview(); renderCategoryView();
         };
         document.getElementById('summary-close').onclick = () => {
           document.getElementById('summary-modal').classList.remove('active');
@@ -1866,88 +1279,70 @@ To use: copy this entire file into a .html file and open in a modern browser.
         const desc = document.getElementById('task-description').value.trim();
         const date = document.getElementById('task-date').value;
         const time = document.getElementById('task-time').value;
-          const category = document.getElementById('task-category').value || '';
+        const category = document.getElementById('task-category').value;
         const priority = document.getElementById('task-priority').value;
         const repeat = document.getElementById('task-repeat').value;
         const nag = document.getElementById('task-nag').value;
-          const dueDT = combineDateTime(date, time);
-          if (editingTaskId) {
-            const existing = tasks.find(t => t.id === editingTaskId);
-            if (!existing) return;
-            existing.title = title;
-            existing.description = desc;
-            existing.date = date;
-            existing.time = time;
-            existing.category = category;
-            existing.priority = priority;
-            existing.repeat = repeat;
-            existing.nag = nag;
-            existing._localModified = true; // Flag to update timestamp
-            if (dueDT) {
-              existing.nextReminder = dueDT.getTime();
-            } else if (!existing.completed) {
-              existing.nextReminder = null;
-            }
-          } else {
-            const newTask = {
-              id: uuid(),
-              title,
-              description: desc,
-              date,
-              time,
-              category,
-              priority,
-              repeat,
-              nag,
-              completed: false,
-              completedAt: null,
-              nextReminder: dueDT ? dueDT.getTime() : null,
-              subtasks: [],
-              createdAt: new Date().toISOString(),
-              lastModified: new Date().toISOString()
-            };
-            tasks.push(newTask);
-          }
+        const newTask = {
+          id: editingTaskId || uuid(),
+          title,
+          description: desc,
+          date,
+          time,
+          category,
+          priority,
+          repeat,
+          nag,
+          completed: false,
+          completedAt: null,
+          nextReminder: null,
+          subtasks: editingTaskId ? (tasks.find(t => t.id === editingTaskId).subtasks || []) : [],
+          createdAt: new Date().toISOString()
+        };
+        const dueDT = combineDateTime(date, time);
+        if (dueDT) newTask.nextReminder = dueDT.getTime();
+        if (editingTaskId) {
+          // Update existing
+          tasks = tasks.map(t => t.id === editingTaskId ? newTask : t);
+        } else {
+          tasks.push(newTask);
+        }
         saveTasks();
         closeTaskModal();
-          editingTaskId = null;
-          renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview(); renderCompletedView();
+        renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview();
       }
-        function deleteTask(id) {
-          tasks = tasks.filter(t => t.id !== id);
-          // Mark all tasks as potentially modified since we're deleting
-          tasks.forEach(t => { t._localModified = true; });
-          saveTasks();
-          renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview(); renderCompletedView();
-        }
-        function completeTask(id) {
-          const task = tasks.find(t => t.id === id);
-          if (!task) return;
-          task.completed = true;
-          task.completedAt = new Date().toISOString();
-          task.nextReminder = null;
-          task._localModified = true; // Flag to update timestamp
-          saveTasks();
-          // If recurring, generate new
-          if (task.repeat && task.repeat !== 'none') {
-            const next = getNextOccurrence(task);
-            if (next) {
-              const newId = uuid();
-              const newTask = Object.assign({}, task, {
-                id: newId,
-                date: next.toISOString().split('T')[0],
-                time: task.time,
-                completed: false,
-                completedAt: null,
-                nextReminder: next.getTime(),
-                subtasks: task.subtasks ? task.subtasks.map(st => ({ id: uuid(), title: st.title, completed: false })) : []
-              });
-              tasks.push(newTask);
-            }
+      function deleteTask(id) {
+        tasks = tasks.filter(t => t.id !== id);
+        saveTasks();
+        renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview();
+      }
+      function completeTask(id) {
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+        task.completed = true;
+        task.completedAt = new Date().toISOString();
+        task.nextReminder = null;
+        saveTasks();
+        // If recurring, generate new
+        if (task.repeat && task.repeat !== 'none') {
+          const next = getNextOccurrence(task);
+          if (next) {
+            const newId = uuid();
+            const newTask = Object.assign({}, task, {
+              id: newId,
+              date: next.toISOString().split('T')[0],
+              time: task.time,
+              completed: false,
+              completedAt: null,
+              nextReminder: next.getTime(),
+              subtasks: task.subtasks ? task.subtasks.map(st => ({ id: uuid(), title: st.title, completed: false })) : []
+            });
+            tasks.push(newTask);
           }
-          saveTasks();
-          renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview(); renderCompletedView();
         }
+        saveTasks();
+        renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview();
+      }
 
       /* ---------- Reminder & Summary Scheduler ---------- */
       function startReminderCheck() {
@@ -1975,7 +1370,6 @@ To use: copy this entire file into a .html file and open in a modern browser.
             task.nextReminder = next.getTime();
           }
         }
-        task._localModified = true; // Flag to update timestamp
         saveTasks();
         const toast = document.getElementById('reminder-toast');
         toast.innerHTML = `${task.title} due! <button id="rem-done">Done</button> <button id="rem-snooze">Snooze</button>`;
@@ -2008,6 +1402,69 @@ To use: copy this entire file into a .html file and open in a modern browser.
         }
       }
 
+      /**
+       * Fetch remote data from the default remote URL. If the request is successful,
+       * merge tasks, categories and settings from the remote file into the local
+       * state and persist them. This runs on app initialization to pull
+       * updates from the remote JSON file.
+       */
+      async function fetchRemote() {
+        const url = settings.remoteUrl || DEFAULT_REMOTE_URL;
+        if (!url) return;
+        try {
+          const res = await fetch(url + '?t=' + Date.now());
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          if (data.tasks) tasks = data.tasks;
+          if (data.categories) categories = data.categories;
+          if (data.settings) {
+            // Merge remote settings but preserve remoteUrl and theme/time if not provided
+            settings.summaryTime = data.settings.summaryTime || settings.summaryTime;
+            settings.theme = data.settings.theme || settings.theme;
+          }
+          saveTasks(); saveCategories(); saveSettings();
+          // Refresh UI after pulling remote data
+          renderToday(); renderAll(); renderCategoryView(); renderWeeklyReview(); renderSettings();
+          broadcastUpdate();
+        } catch (e) {
+          console.log('Remote fetch error:', e.message);
+        }
+      }
+
+      /**
+       * Attempt to sync current data to the remote location. The function sends
+       * a PUT request with the JSON payload to the remote URL. If this fails
+       * (likely due to cross-origin or authentication restrictions), it will
+       * fallback to downloading the JSON as a file named update.json so you can
+       * manually upload/commit it to your repository.
+       */
+      function syncToRemote() {
+        const url = settings.remoteUrl || DEFAULT_REMOTE_URL;
+        const payload = JSON.stringify({ tasks, categories, settings });
+        fetch(url, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload
+        }).then(res => {
+          if (res.ok) {
+            alert('Data synced to remote successfully.');
+          } else {
+            throw new Error('HTTP ' + res.status);
+          }
+        }).catch(err => {
+          // Fallback: download the JSON for manual upload
+          const blob = new Blob([payload], { type: 'application/json' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'update.json';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(a.href);
+          alert('Failed to sync to remote automatically. A file named update.json has been downloaded instead. Upload or commit this file to your repository to propagate changes.');
+        });
+      }
+
       /* ---------- Event Listeners ---------- */
       function addEventListeners() {
         // Navigation buttons
@@ -2023,14 +1480,6 @@ To use: copy this entire file into a .html file and open in a modern browser.
         document.getElementById('add-task-nav').addEventListener('click', () => {
           openTaskModal(null);
         });
-          const quickAddBtn = document.getElementById('today-quick-add');
-          if (quickAddBtn) {
-            quickAddBtn.addEventListener('click', () => {
-              openTaskModal(null);
-              const dateEl = document.getElementById('task-date');
-              if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
-            });
-          }
         // Modal save/cancel
         document.getElementById('task-cancel').addEventListener('click', closeTaskModal);
         document.getElementById('task-save').addEventListener('click', saveTaskFromModal);
@@ -2038,17 +1487,6 @@ To use: copy this entire file into a .html file and open in a modern browser.
         document.getElementById('search-input').addEventListener('input', renderAll);
         document.getElementById('filter-category').addEventListener('change', renderAll);
         document.getElementById('filter-priority').addEventListener('change', renderAll);
-          const statusToggle = document.getElementById('status-toggle');
-          if (statusToggle) {
-            statusToggle.querySelectorAll('button').forEach(btn => {
-              btn.addEventListener('click', () => {
-                statusFilter = btn.getAttribute('data-status');
-                statusToggle.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                renderAll();
-              });
-            });
-          }
         // Settings change
         document.getElementById('summary-time').addEventListener('change', (e) => {
           settings.summaryTime = e.target.value;
@@ -2131,12 +1569,11 @@ To use: copy this entire file into a .html file and open in a modern browser.
               saveSettings();
               document.getElementById('import-textarea').style.display = 'none';
               document.getElementById('import-actions').style.display = 'none';
-                renderSettings();
-                renderToday();
-                renderAll();
-                renderCategoryView();
-                renderWeeklyReview();
-                renderCompletedView();
+              renderSettings();
+              renderToday();
+              renderAll();
+              renderCategoryView();
+              renderWeeklyReview();
               alert('Data imported successfully.');
             } catch (e) {
               alert('Invalid JSON. Please ensure you pasted the exported data correctly.');
@@ -2166,75 +1603,50 @@ To use: copy this entire file into a .html file and open in a modern browser.
             }
           });
         }
-          const signInBtn = document.getElementById('sign-in-btn');
-          if (signInBtn) {
-            signInBtn.addEventListener('click', () => {
-              if (authSupported()) {
-                openAuthOverlay();
-              } else {
-                alert('Cloud sync is unavailable in this environment.');
-              }
-            });
-          }
       }
       function setActiveView(viewId) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById(viewId).classList.add('active');
         // Render specific view if needed
         if (viewId === 'today-view') renderToday();
-          if (viewId === 'all-view') {
-            refreshCategorySelects();
-            renderAll();
-          }
+        if (viewId === 'all-view') {
+          // populate filter categories
+          const select = document.getElementById('filter-category');
+          select.innerHTML = '<option value="">All Categories</option>';
+          categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat.id;
+            opt.textContent = cat.name;
+            select.appendChild(opt);
+          });
+          renderAll();
+        }
         if (viewId === 'category-view') renderCategoryView();
-      if (viewId === 'completed-view') renderCompletedView();
         if (viewId === 'weekly-view') renderWeeklyReview();
         if (viewId === 'settings-view') renderSettings();
       }
 
-        function authSupported() {
-          return !!(auth && db && typeof auth.onAuthStateChanged === 'function');
-        }
-        function openAuthOverlay() {
-          if (!authSupported()) return;
-          authOverlayDismissed = false;
-          const overlay = document.getElementById('auth-overlay');
-          if (overlay) overlay.style.display = 'flex';
-        }
-
-        /* ---------- Initialization ---------- */
-        // Setup Firebase authentication and Firestore synchronization.
-        function setupAuthentication() {
-          const overlay = document.getElementById('auth-overlay');
-          if (!overlay) return;
-          const titleEl = document.getElementById('auth-title');
-          const emailEl = document.getElementById('auth-email');
-          const passEl = document.getElementById('auth-password');
-          const submitBtn = document.getElementById('auth-submit');
-          const toggleEl = document.getElementById('auth-toggle');
-          const errorEl = document.getElementById('auth-error');
-          const offlineBtn = document.getElementById('auth-offline');
-          const authReady = authSupported();
-          let isSignUp = false;
-
-          if (!authReady) {
-            overlay.style.display = 'none';
-            if (offlineBtn) offlineBtn.style.display = 'none';
-            return;
-          }
-
-          overlay.style.display = 'flex';
-          if (offlineBtn) {
-            offlineBtn.onclick = () => {
-              authOverlayDismissed = true;
-              overlay.style.display = 'none';
-              errorEl.textContent = '';
-              if (unsubscribeDoc) unsubscribeDoc();
-              unsubscribeDoc = null;
-              userDocRef = null;
-              renderSettings();
-            };
-          }
+      /* ---------- Initialization ---------- */
+      // Setup Firebase authentication and Firestore synchronization.
+      function setupAuthentication() {
+        // Always display the authentication overlay initially.
+        const overlay = document.getElementById('auth-overlay');
+        overlay.style.display = 'flex';
+        // Grab authentication overlay elements
+        // Note: overlay has already been referenced above
+        const titleEl = document.getElementById('auth-title');
+        const emailEl = document.getElementById('auth-email');
+        const passEl = document.getElementById('auth-password');
+        const submitBtn = document.getElementById('auth-submit');
+        const toggleEl = document.getElementById('auth-toggle');
+        const errorEl = document.getElementById('auth-error');
+        let isSignUp = false;
+        // Only bind Firebase handlers if authentication is available
+        if (!auth) {
+          // If auth is undefined, show an error and skip binding events
+          errorEl.textContent = 'Authentication unavailable. Please check your internet connection or Firebase configuration.';
+        } else {
+          // Toggle between login and sign-up modes
           toggleEl.onclick = () => {
             isSignUp = !isSignUp;
             titleEl.textContent = isSignUp ? 'Sign Up' : 'Login';
@@ -2242,6 +1654,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
             toggleEl.textContent = isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign up";
             errorEl.textContent = '';
           };
+          // Submit handler for login or sign-up
           submitBtn.onclick = () => {
             const email = emailEl.value.trim();
             const password = passEl.value.trim();
@@ -2250,157 +1663,96 @@ To use: copy this entire file into a .html file and open in a modern browser.
               errorEl.textContent = 'Please enter email and password.';
               return;
             }
-            const action = isSignUp ? auth.createUserWithEmailAndPassword : auth.signInWithEmailAndPassword;
-            action.call(auth, email, password).catch(err => {
-              errorEl.textContent = err.message;
-            });
+            if (isSignUp) {
+              auth.createUserWithEmailAndPassword(email, password).catch(err => {
+                errorEl.textContent = err.message;
+              });
+            } else {
+              auth.signInWithEmailAndPassword(email, password).catch(err => {
+                errorEl.textContent = err.message;
+              });
+            }
           };
-          const signOutBtn = document.getElementById('sign-out-btn');
-          if (signOutBtn) {
-            signOutBtn.onclick = () => {
-              if (auth) auth.signOut();
-            };
-          }
+        }
+        // Sign-out button handler
+        const signOutBtn = document.getElementById('sign-out-btn');
+        if (signOutBtn) {
+          signOutBtn.onclick = () => {
+            if (auth) auth.signOut();
+          };
+        }
+        // Monitor auth state changes only if auth is available
+        if (auth && auth.onAuthStateChanged) {
           auth.onAuthStateChanged(async (usr) => {
             if (usr) {
+              // Logged in: hide auth overlay
               overlay.style.display = 'none';
-              authOverlayDismissed = false;
+              // Set up document reference for user
               userDocRef = db.collection('users').doc(usr.uid);
-              let dataSnap = await userDocRef.get();
-              if (!dataSnap.exists) {
+              // Ensure document exists
+              const docSnap = await userDocRef.get();
+              if (!docSnap.exists) {
                 await userDocRef.set({ tasks: [], categories: defaultCategories, settings: { summaryTime: '20:00', theme: 'light' } });
-                dataSnap = await userDocRef.get();
               }
+              // Load user data from Firestore
+              const dataSnap = await userDocRef.get();
               const data = dataSnap.data() || {};
-              const remoteTasks = Array.isArray(data.tasks) ? data.tasks : [];
-              const remoteCategories = Array.isArray(data.categories) ? data.categories : defaultCategories.slice();
-              const remoteSettings = Object.assign({ summaryTime: '20:00', theme: 'light' }, data.settings || {});
-              // Always merge local and remote data to prevent data loss
-              // Load current local state first
-              loadTasks();
-              loadCategories();
-              loadSettings();
-              // Merge remote and local data (local takes precedence for conflicts)
-              tasks = mergeListsById(remoteTasks, tasks);
-              categories = mergeListsById(remoteCategories, categories);
-              settings = Object.assign({}, remoteSettings, settings);
-              // Save merged data to localStorage
-              saveTasks({ skipRemote: true });
-              saveCategories({ skipRemote: true });
-              saveSettings({ skipRemote: true });
-              // Sync merged data back to Firestore
-              try {
-                const syncTimestamp = new Date().toISOString();
-                lastLocalSyncTimestamp = syncTimestamp;
-                await userDocRef.set({ 
-                  tasks: tasks, 
-                  categories: categories, 
-                  settings: settings,
-                  lastSyncedAt: syncTimestamp
-                }, { merge: true });
-                clearPendingSyncFlag();
-              } catch (err) {
-                console.log('Error syncing merged data to Firestore:', err);
-              }
+              tasks = data.tasks || [];
+              categories = data.categories || defaultCategories.slice();
+              settings.summaryTime = data.settings && data.settings.summaryTime ? data.settings.summaryTime : settings.summaryTime;
+              settings.theme = data.settings && data.settings.theme ? data.settings.theme : settings.theme;
+              // Persist to local storage
+              saveTasks();
+              saveCategories();
+              saveSettings();
+              // Apply theme and refresh UI
               document.body.classList.toggle('dark', settings.theme === 'dark');
               renderToday();
               renderAll();
               renderCategoryView();
               renderWeeklyReview();
-              renderCompletedView();
               renderSettings();
+              // Subscribe to document changes to sync in real-time
               if (unsubscribeDoc) unsubscribeDoc();
               unsubscribeDoc = userDocRef.onSnapshot((snapshot) => {
                 if (!snapshot.exists) return;
-                const remoteData = snapshot.data() || {};
-                const remoteLastSynced = remoteData.lastSyncedAt;
-                
-                // Skip if this snapshot is from our own write (we just saved this timestamp)
-                if (lastLocalSyncTimestamp && remoteLastSynced === lastLocalSyncTimestamp) {
-                  return;
-                }
-                
-                const remoteTasks = Array.isArray(remoteData.tasks) ? remoteData.tasks : [];
-                const remoteCategories = Array.isArray(remoteData.categories) ? remoteData.categories : defaultCategories.slice();
-                const remoteSettingsData = remoteData.settings || {};
-                
-                // Check if remote data is actually different from local
-                const localTasksStr = JSON.stringify(tasks.sort((a, b) => (a.id || '').localeCompare(b.id || '')));
-                const remoteTasksStr = JSON.stringify(remoteTasks.sort((a, b) => (a.id || '').localeCompare(b.id || '')));
-                
-                // Only process if remote data is different (from another device)
-                if (localTasksStr !== remoteTasksStr || 
-                    JSON.stringify(categories.sort((a, b) => (a.id || '').localeCompare(b.id || ''))) !== JSON.stringify(remoteCategories.sort((a, b) => (a.id || '').localeCompare(b.id || ''))) ||
-                    JSON.stringify(settings) !== JSON.stringify(remoteSettingsData)) {
-                  
-                  isApplyingRemoteUpdate = true;
-                  // Merge remote changes with current local state
-                  // This handles real-time updates from other devices
-                  // Use timestamp-based merge to keep the newest version of each item
-                  const mergedTasks = mergeListsById(remoteTasks, tasks);
-                  const mergedCategories = mergeListsById(remoteCategories, categories);
-                  const mergedSettings = Object.assign({}, settings, remoteSettingsData);
-                  
-                  // Only update if there are actual changes
-                  let hasChanges = false;
-                  if (JSON.stringify(tasks.sort((a, b) => (a.id || '').localeCompare(b.id || ''))) !== JSON.stringify(mergedTasks.sort((a, b) => (a.id || '').localeCompare(b.id || '')))) {
-                    tasks = mergedTasks;
-                    hasChanges = true;
-                  }
-                  if (JSON.stringify(categories.sort((a, b) => (a.id || '').localeCompare(b.id || ''))) !== JSON.stringify(mergedCategories.sort((a, b) => (a.id || '').localeCompare(b.id || '')))) {
-                    categories = mergedCategories;
-                    hasChanges = true;
-                  }
-                  if (JSON.stringify(settings) !== JSON.stringify(mergedSettings)) {
-                    settings = mergedSettings;
-                    hasChanges = true;
-                  }
-                  
-                  if (hasChanges) {
-                    if (!settings.summaryTime) settings.summaryTime = '20:00';
-                    if (!settings.theme) settings.theme = 'light';
-                    
-                    saveTasks({ skipRemote: true, skipBroadcast: true });
-                    saveCategories({ skipRemote: true });
-                    saveSettings({ skipRemote: true });
-                    
-                    document.body.classList.toggle('dark', settings.theme === 'dark');
-                    renderToday();
-                    renderAll();
-                    renderCategoryView();
-                    renderWeeklyReview();
-                    renderCompletedView();
-                    renderSettings();
-                  }
-                  
-                  isApplyingRemoteUpdate = false;
-                }
+                const remoteData = snapshot.data();
+                // Update local state
+                tasks = remoteData.tasks || [];
+                categories = remoteData.categories || defaultCategories.slice();
+                settings.summaryTime = remoteData.settings && remoteData.settings.summaryTime ? remoteData.settings.summaryTime : settings.summaryTime;
+                settings.theme = remoteData.settings && remoteData.settings.theme ? remoteData.settings.theme : settings.theme;
+                saveTasks();
+                saveCategories();
+                saveSettings();
+                document.body.classList.toggle('dark', settings.theme === 'dark');
+                renderToday();
+                renderAll();
+                renderCategoryView();
+                renderWeeklyReview();
+                renderSettings();
               });
-              // Initial sync is already done above, so no need to schedule again
             } else {
-              if (cloudSyncTimer) {
-                clearTimeout(cloudSyncTimer);
-                cloudSyncTimer = null;
-              }
+              // Logged out: show overlay and clear reference
+              overlay.style.display = 'flex';
               userDocRef = null;
               if (unsubscribeDoc) unsubscribeDoc();
               unsubscribeDoc = null;
+              // When logged out, load data from local storage
               loadTasks();
               loadCategories();
               loadSettings();
+              // Apply theme and refresh UI with local data
               document.body.classList.toggle('dark', settings.theme === 'dark');
               renderToday();
               renderAll();
               renderCategoryView();
               renderWeeklyReview();
-              renderCompletedView();
               renderSettings();
-              if (!authOverlayDismissed) {
-                overlay.style.display = 'flex';
-              }
             }
           });
         }
+      }
       function init() {
         loadTasks();
         loadCategories();
@@ -2412,14 +1764,13 @@ To use: copy this entire file into a .html file and open in a modern browser.
         renderAll();
         renderCategoryView();
         renderWeeklyReview();
-        renderCompletedView();
         renderSettings();
         // Start reminder scheduler
         startReminderCheck();
         // Setup events
         addEventListeners();
-          // Prepare category select for add/edit
-          refreshCategorySelects();
+        // Prepare category select for add/edit
+        renderCategoriesOptions(document.getElementById('task-category'));
         // Setup authentication (Firebase) for online sync
         setupAuthentication();
       }
