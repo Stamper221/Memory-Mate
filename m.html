@@ -263,21 +263,33 @@ To use: copy this entire file into a .html file and open in a modern browser.
     .modal-overlay.active {
       display: flex;
     }
-    .modal {
-      background: var(--card-bg);
-      padding: 20px;
-      border-radius: 8px;
-      width: 90%;
-      max-width: 400px;
-      max-height: 90%;
-      overflow-y: auto;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      animation: slideUp 0.3s ease;
-    }
-    @keyframes slideUp {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
+      .modal {
+        background: var(--card-bg);
+        padding: 20px;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 400px;
+        max-height: 90%;
+        overflow-y: auto;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        animation: slideUp 0.3s ease;
+      }
+      @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      .sync-status {
+        font-size: 12px;
+        margin-bottom: 8px;
+        color: var(--muted-color);
+      }
+      .sync-status.online {
+        color: var(--success-color);
+      }
+      .sync-status.offline,
+      .sync-status.error {
+        color: var(--warning-color);
+      }
 
     /* Reminder toast */
     #reminder-toast {
@@ -451,9 +463,10 @@ To use: copy this entire file into a .html file and open in a modern browser.
       </div>
       <button id="add-category-btn" class="btn btn-primary">Add Category</button>
 
-      <!-- Sync section -->
-      <h2>Sync</h2>
-      <p style="font-size:12px;color:var(--muted-color);margin-bottom:8px;">Export or import your tasks to share across devices. Exported data is a JSON string you can copy and paste into another device's import box.</p>
+        <!-- Sync section -->
+        <h2>Sync</h2>
+        <p style="font-size:12px;color:var(--muted-color);margin-bottom:8px;">Export or import your tasks to share across devices. Exported data is a JSON string you can copy and paste into another device's import box.</p>
+        <div id="sync-status" class="sync-status">Sync: Local only (this device)</div>
       <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
         <button id="export-btn" class="btn btn-primary" style="flex:1;min-width:120px;">Export Data</button>
         <button id="import-btn" class="btn btn-secondary" style="flex:1;min-width:120px;">Import Data</button>
@@ -638,6 +651,9 @@ To use: copy this entire file into a .html file and open in a modern browser.
       let userDocRef = null;
       let unsubscribeDoc = null;
       let suppressRemoteSave = false;
+      let remoteWriteQueue = Promise.resolve();
+      let currentSyncMode = 'offline';
+      let currentSyncMessage = 'Sync: Local only (this device)';
       if (typeof firebase !== 'undefined') {
         try {
           firebase.initializeApp(firebaseConfig);
@@ -685,6 +701,67 @@ To use: copy this entire file into a .html file and open in a modern browser.
         { id: 'health', name: 'Health', color: '#1abc9c' },
         { id: 'later', name: 'For Later', color: '#95a5a6' }
       ];
+      function persistLocalTasks() {
+        try {
+          localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+        } catch (err) {
+          console.warn('Unable to persist tasks locally', err);
+        }
+      }
+      function persistLocalCategories() {
+        try {
+          localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+        } catch (err) {
+          console.warn('Unable to persist categories locally', err);
+        }
+      }
+      function persistLocalSettings() {
+        try {
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        } catch (err) {
+          console.warn('Unable to persist settings locally', err);
+        }
+      }
+      function persistAllLocal() {
+        persistLocalTasks();
+        persistLocalCategories();
+        persistLocalSettings();
+      }
+      function updateSyncStatus(mode = currentSyncMode, message) {
+        currentSyncMode = mode;
+        currentSyncMessage = message || (mode === 'online' ? 'Sync: Real-time via Firebase' : 'Sync: Local only (this device)');
+        const statusEl = document.getElementById('sync-status');
+        if (statusEl) {
+          statusEl.textContent = currentSyncMessage;
+          statusEl.classList.remove('online', 'offline', 'error');
+          statusEl.classList.add(mode);
+        }
+      }
+      function queueRemoteSync(context = 'manual') {
+        if (!userDocRef || suppressRemoteSave) return Promise.resolve();
+        const payload = {
+          tasks,
+          categories,
+          settings,
+          lastWriteContext: context
+        };
+        if (firebase && firebase.firestore && firebase.firestore.FieldValue) {
+          payload.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+        } else {
+          payload.updatedAt = new Date().toISOString();
+        }
+        remoteWriteQueue = remoteWriteQueue
+          .catch(() => {})
+          .then(() => userDocRef.set(payload, { merge: true }))
+          .then(() => {
+            updateSyncStatus('online', 'Sync: Real-time via Firebase');
+          })
+          .catch(err => {
+            console.error('Error syncing to Firestore:', err);
+            updateSyncStatus('error', 'Sync error – working locally until connection recovers.');
+          });
+        return remoteWriteQueue;
+      }
 
       /* ---------- Utility Functions ---------- */
       // Generate a simple unique ID
@@ -697,37 +774,16 @@ To use: copy this entire file into a .html file and open in a modern browser.
           tasks = JSON.parse(localStorage.getItem(TASKS_KEY)) || [];
         } catch (e) { tasks = []; }
       }
-      // Save tasks to Firestore (when logged in) or localStorage (when logged out)
-      function saveTasks(options = {}) {
-        const skipRemote = suppressRemoteSave || options.skipRemote;
-        // If logged in, save to Firestore ONLY
-        if (userDocRef && !skipRemote) {
-          try {
-            // Save all data to Firestore in one operation
-            userDocRef.set({ 
-              tasks: tasks, 
-              categories: categories, 
-              settings: settings 
-            }, { merge: true }).then(() => {
-              // Successfully saved to Firestore - sync will happen via onSnapshot
-              console.log('Tasks saved to Firestore successfully');
-            }).catch(err => {
-              console.error('Error saving tasks to Firestore:', err);
-              // Fallback to localStorage if Firestore save fails
-              localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-            });
-          } catch (err) {
-            console.error('Error saving tasks to Firestore:', err);
-            // Fallback to localStorage if Firestore save fails
-            localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+        // Save tasks to Firestore (when logged in) or localStorage (when logged out)
+        function saveTasks(options = {}) {
+          persistLocalTasks();
+          const skipRemote = suppressRemoteSave || options.skipRemote;
+          if (userDocRef && !skipRemote) {
+            queueRemoteSync(options.context || 'tasks');
+          } else if (!userDocRef) {
+            broadcastUpdate();
           }
-        } else if (!userDocRef) {
-          // Only save to localStorage when not logged in
-          localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-          // broadcast update to other tabs/windows (for local sync only)
-          broadcastUpdate();
         }
-      }
       // Load categories from localStorage or default
       function loadCategories() {
         try {
@@ -737,34 +793,13 @@ To use: copy this entire file into a .html file and open in a modern browser.
           categories = defaultCategories;
         }
       }
-      function saveCategories(options = {}) {
-        const skipRemote = suppressRemoteSave || options.skipRemote;
-        // If logged in, save to Firestore ONLY
-        if (userDocRef && !skipRemote) {
-          try {
-            // Save all data to Firestore in one operation
-            userDocRef.set({ 
-              tasks: tasks, 
-              categories: categories, 
-              settings: settings 
-            }, { merge: true }).then(() => {
-              // Successfully saved to Firestore - sync will happen via onSnapshot
-              console.log('Categories saved to Firestore successfully');
-            }).catch(err => {
-              console.error('Error saving categories to Firestore:', err);
-              // Fallback to localStorage if Firestore save fails
-              localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
-            });
-          } catch (err) {
-            console.error('Error saving categories to Firestore:', err);
-            // Fallback to localStorage if Firestore save fails
-            localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+        function saveCategories(options = {}) {
+          persistLocalCategories();
+          const skipRemote = suppressRemoteSave || options.skipRemote;
+          if (userDocRef && !skipRemote) {
+            queueRemoteSync(options.context || 'categories');
           }
-        } else if (!userDocRef) {
-          // Only save to localStorage when not logged in
-          localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
         }
-      }
       // Load settings from localStorage or default
       function loadSettings() {
         try {
@@ -776,34 +811,13 @@ To use: copy this entire file into a .html file and open in a modern browser.
         }
         // Removed remoteUrl key: synchronization is managed via Firebase.
       }
-      function saveSettings(options = {}) {
-        const skipRemote = suppressRemoteSave || options.skipRemote;
-        // If logged in, save to Firestore ONLY
-        if (userDocRef && !skipRemote) {
-          try {
-            // Save all data to Firestore in one operation
-            userDocRef.set({ 
-              tasks: tasks, 
-              categories: categories, 
-              settings: settings 
-            }, { merge: true }).then(() => {
-              // Successfully saved to Firestore - sync will happen via onSnapshot
-              console.log('Settings saved to Firestore successfully');
-            }).catch(err => {
-              console.error('Error saving settings to Firestore:', err);
-              // Fallback to localStorage if Firestore save fails
-              localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-            });
-          } catch (err) {
-            console.error('Error saving settings to Firestore:', err);
-            // Fallback to localStorage if Firestore save fails
-            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        function saveSettings(options = {}) {
+          persistLocalSettings();
+          const skipRemote = suppressRemoteSave || options.skipRemote;
+          if (userDocRef && !skipRemote) {
+            queueRemoteSync(options.context || 'settings');
           }
-        } else if (!userDocRef) {
-          // Only save to localStorage when not logged in
-          localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
         }
-      }
       // Format date/time strings for display
       function formatDate(dateStr) {
         // Parse date string as local date to avoid timezone offset issues when formatting.
@@ -1683,25 +1697,25 @@ To use: copy this entire file into a .html file and open in a modern browser.
 
       /* ---------- Initialization ---------- */
       // Setup Firebase authentication and Firestore synchronization.
-      function setupAuthentication() {
-        // Always display the authentication overlay initially.
-        const overlay = document.getElementById('auth-overlay');
-        overlay.style.display = 'flex';
-        // Grab authentication overlay elements
-        // Note: overlay has already been referenced above
-        const titleEl = document.getElementById('auth-title');
-        const emailEl = document.getElementById('auth-email');
-        const passEl = document.getElementById('auth-password');
-        const submitBtn = document.getElementById('auth-submit');
-        const toggleEl = document.getElementById('auth-toggle');
-        const errorEl = document.getElementById('auth-error');
-        let isSignUp = false;
-        // Only bind Firebase handlers if authentication is available
-        if (!auth) {
-          // If auth is undefined, show an error and skip binding events
-          errorEl.textContent = 'Authentication unavailable. Please check your internet connection or Firebase configuration.';
-        } else {
-          // Toggle between login and sign-up modes
+        function setupAuthentication() {
+          const overlay = document.getElementById('auth-overlay');
+          const titleEl = document.getElementById('auth-title');
+          const emailEl = document.getElementById('auth-email');
+          const passEl = document.getElementById('auth-password');
+          const submitBtn = document.getElementById('auth-submit');
+          const toggleEl = document.getElementById('auth-toggle');
+          const errorEl = document.getElementById('auth-error');
+          let isSignUp = false;
+          if (!auth || !db || !auth.onAuthStateChanged) {
+            if (overlay) overlay.style.display = 'none';
+            if (errorEl) {
+              errorEl.textContent = 'Online sync is unavailable. Running in local-only mode.';
+            }
+            console.warn('Firebase services unavailable. Running in offline mode.');
+            updateSyncStatus('offline', 'Sync: Local only (Firebase unavailable)');
+            return;
+          }
+          if (overlay) overlay.style.display = 'flex';
           toggleEl.onclick = () => {
             isSignUp = !isSignUp;
             titleEl.textContent = isSignUp ? 'Sign Up' : 'Login';
@@ -1709,7 +1723,6 @@ To use: copy this entire file into a .html file and open in a modern browser.
             toggleEl.textContent = isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign up";
             errorEl.textContent = '';
           };
-          // Submit handler for login or sign-up
           submitBtn.onclick = () => {
             const email = emailEl.value.trim();
             const password = passEl.value.trim();
@@ -1728,7 +1741,6 @@ To use: copy this entire file into a .html file and open in a modern browser.
               });
             }
           };
-        }
         // Sign-out button handler
         const signOutBtn = document.getElementById('sign-out-btn');
         if (signOutBtn) {
@@ -1742,11 +1754,6 @@ To use: copy this entire file into a .html file and open in a modern browser.
               if (usr) {
                 // Logged in: hide auth overlay
                 overlay.style.display = 'none';
-                
-                // Clear localStorage to ensure Firestore is the single source of truth
-                localStorage.removeItem(TASKS_KEY);
-                localStorage.removeItem(CATEGORIES_KEY);
-                localStorage.removeItem(SETTINGS_KEY);
                 
                 // Set up document reference for user
                 userDocRef = db.collection('users').doc(usr.uid);
@@ -1772,6 +1779,9 @@ To use: copy this entire file into a .html file and open in a modern browser.
                   categories = remoteData.categories || defaultCategories.slice();
                   settings = remoteData.settings || { summaryTime: '20:00', theme: 'light' };
                 }
+                  
+                  persistAllLocal();
+                  updateSyncStatus('online', 'Sync: Real-time via Firebase');
                 
                 // Apply theme and refresh UI
                 document.body.classList.toggle('dark', settings.theme === 'dark');
@@ -1799,6 +1809,8 @@ To use: copy this entire file into a .html file and open in a modern browser.
                     renderCategoryView();
                     renderWeeklyReview();
                     renderSettings();
+                    persistAllLocal();
+                    updateSyncStatus('online', 'Sync: Real-time via Firebase');
                     return;
                   }
                   
@@ -1839,6 +1851,8 @@ To use: copy this entire file into a .html file and open in a modern browser.
                     renderCategoryView();
                     renderWeeklyReview();
                     renderSettings();
+                    persistAllLocal();
+                    updateSyncStatus('online', 'Sync: Real-time via Firebase');
                   }
                   
                   // Re-enable remote saves after handling remote update
@@ -1846,6 +1860,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
                 }, (error) => {
                   console.error('Firestore snapshot error:', error);
                   suppressRemoteSave = false;
+                  updateSyncStatus('error', 'Realtime sync lost – working locally until reconnected.');
                   // On error, don't prevent future saves
                 });
               } else {
@@ -1865,27 +1880,27 @@ To use: copy this entire file into a .html file and open in a modern browser.
                 renderCategoryView();
                 renderWeeklyReview();
                 renderSettings();
+                updateSyncStatus('offline', 'Sync: Local only (signed out)');
               }
             });
           }
       }
-      function init() {
-        // Don't load from localStorage on init - wait for auth state
-        // If Firebase is available, data will be loaded after authentication
-        // If not available, data will be loaded when user logs out
-        
-        // Apply default theme (will be updated after auth)
-        document.body.classList.toggle('dark', false);
-        
-        // Start reminder scheduler
-        startReminderCheck();
-        // Setup events
-        addEventListeners();
-        // Prepare category select for add/edit
-        renderCategoriesOptions(document.getElementById('task-category'));
-        // Setup authentication (Firebase) for online sync
-        setupAuthentication();
-      }
+        function init() {
+          loadTasks();
+          loadCategories();
+          loadSettings();
+          document.body.classList.toggle('dark', settings.theme === 'dark');
+          renderToday();
+          renderAll();
+          renderCategoryView();
+          renderWeeklyReview();
+          renderSettings();
+          updateSyncStatus(currentSyncMode, currentSyncMessage);
+          startReminderCheck();
+          addEventListeners();
+          renderCategoriesOptions(document.getElementById('task-category'));
+          setupAuthentication();
+        }
       // Wait for DOM ready
       document.addEventListener('DOMContentLoaded', init);
     })();
