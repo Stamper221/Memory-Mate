@@ -3,9 +3,12 @@ MemoryMate: a smart reminder/task assistant web app
 Built as a single‑file HTML/CSS/JS application.
 
 This app is designed to be fully functional when loaded in a browser.
-All data (tasks, categories, settings) is persisted to localStorage.
+All data (tasks, categories, settings) is synced to Firebase Firestore for cross-device access.
+Data is stored per authenticated user and syncs in real-time across all logged-in devices.
 
 Features implemented:
+  • User authentication with Firebase (login/signup)
+  • Cross-device synchronization via Firestore
   • Add, edit, delete tasks with title, description, date, time, category, repeat type, priority and nag type.
   • Mark tasks complete and generate recurring tasks.
   • Overdue detection, smart nagging with in‑app reminder notifications and snooze options.
@@ -694,20 +697,27 @@ To use: copy this entire file into a .html file and open in a modern browser.
           tasks = JSON.parse(localStorage.getItem(TASKS_KEY)) || [];
         } catch (e) { tasks = []; }
       }
-      // Save tasks to localStorage or Firestore
+      // Save tasks to Firestore (when logged in) or localStorage (when logged out)
       function saveTasks(options = {}) {
         const skipRemote = suppressRemoteSave || options.skipRemote;
-        // If logged in, save to Firestore only
+        // If logged in, save to Firestore ONLY
         if (userDocRef && !skipRemote) {
           try {
-            userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
+            // Save all data to Firestore in one operation
+            userDocRef.set({ 
+              tasks: tasks, 
+              categories: categories, 
+              settings: settings 
+            }, { merge: true }).catch(err => {
+              console.error('Error saving to Firestore:', err);
+            });
           } catch (err) {
-            console.log('Error saving tasks to Firestore:', err);
+            console.error('Error saving to Firestore:', err);
           }
         } else if (!userDocRef) {
           // Only save to localStorage when not logged in
           localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-          // broadcast update to other tabs/windows
+          // broadcast update to other tabs/windows (for local sync only)
           broadcastUpdate();
         }
       }
@@ -722,12 +732,19 @@ To use: copy this entire file into a .html file and open in a modern browser.
       }
       function saveCategories(options = {}) {
         const skipRemote = suppressRemoteSave || options.skipRemote;
-        // If logged in, save to Firestore only
+        // If logged in, save to Firestore ONLY
         if (userDocRef && !skipRemote) {
           try {
-            userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
+            // Save all data to Firestore in one operation
+            userDocRef.set({ 
+              tasks: tasks, 
+              categories: categories, 
+              settings: settings 
+            }, { merge: true }).catch(err => {
+              console.error('Error saving to Firestore:', err);
+            });
           } catch (err) {
-            console.log('Error saving categories to Firestore:', err);
+            console.error('Error saving to Firestore:', err);
           }
         } else if (!userDocRef) {
           // Only save to localStorage when not logged in
@@ -747,12 +764,19 @@ To use: copy this entire file into a .html file and open in a modern browser.
       }
       function saveSettings(options = {}) {
         const skipRemote = suppressRemoteSave || options.skipRemote;
-        // If logged in, save to Firestore only
+        // If logged in, save to Firestore ONLY
         if (userDocRef && !skipRemote) {
           try {
-            userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
+            // Save all data to Firestore in one operation
+            userDocRef.set({ 
+              tasks: tasks, 
+              categories: categories, 
+              settings: settings 
+            }, { merge: true }).catch(err => {
+              console.error('Error saving to Firestore:', err);
+            });
           } catch (err) {
-            console.log('Error saving settings to Firestore:', err);
+            console.error('Error saving to Firestore:', err);
           }
         } else if (!userDocRef) {
           // Only save to localStorage when not logged in
@@ -1697,6 +1721,12 @@ To use: copy this entire file into a .html file and open in a modern browser.
               if (usr) {
                 // Logged in: hide auth overlay
                 overlay.style.display = 'none';
+                
+                // Clear localStorage to ensure Firestore is the single source of truth
+                localStorage.removeItem(TASKS_KEY);
+                localStorage.removeItem(CATEGORIES_KEY);
+                localStorage.removeItem(SETTINGS_KEY);
+                
                 // Set up document reference for user
                 userDocRef = db.collection('users').doc(usr.uid);
                 
@@ -1730,7 +1760,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
                 renderWeeklyReview();
                 renderSettings();
                 
-                // Subscribe to document changes for real-time sync
+                // Subscribe to document changes for real-time cross-device sync
                 if (unsubscribeDoc) unsubscribeDoc();
                 
                 unsubscribeDoc = userDocRef.onSnapshot((snapshot) => {
@@ -1738,12 +1768,13 @@ To use: copy this entire file into a .html file and open in a modern browser.
                   
                   const remoteData = snapshot.data();
                   
-                  // Update local state from remote changes (real-time sync)
+                  // Update local state from remote changes (real-time sync across devices)
+                  // This allows changes made on other devices to appear immediately
                   tasks = remoteData.tasks || [];
                   categories = remoteData.categories || defaultCategories.slice();
                   settings = remoteData.settings || { summaryTime: '20:00', theme: 'light' };
                   
-                  // Apply theme and refresh UI
+                  // Apply theme and refresh UI to reflect changes from other devices
                   document.body.classList.toggle('dark', settings.theme === 'dark');
                   renderToday();
                   renderAll();
@@ -1773,17 +1804,13 @@ To use: copy this entire file into a .html file and open in a modern browser.
           }
       }
       function init() {
-        loadTasks();
-        loadCategories();
-        loadSettings();
-        // Apply theme
-        document.body.classList.toggle('dark', settings.theme === 'dark');
-        // Render initial views
-        renderToday();
-        renderAll();
-        renderCategoryView();
-        renderWeeklyReview();
-        renderSettings();
+        // Don't load from localStorage on init - wait for auth state
+        // If Firebase is available, data will be loaded after authentication
+        // If not available, data will be loaded when user logs out
+        
+        // Apply default theme (will be updated after auth)
+        document.body.classList.toggle('dark', false);
+        
         // Start reminder scheduler
         startReminderCheck();
         // Setup events
