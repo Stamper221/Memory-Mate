@@ -65,12 +65,22 @@ To use: copy this entire file into a .html file and open in a modern browser.
       height: 100%;
     }
     body {
-      font-family: sans-serif;
-      background: var(--bg-color);
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at top, rgba(74,144,226,0.15), transparent 45%), var(--bg-color);
       color: var(--text-color);
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(135deg, rgba(80,227,194,0.08), rgba(74,144,226,0.08));
+      opacity: 0.7;
+      z-index: -1;
     }
     /* Main container occupies available space minus bottom nav */
     #app {
@@ -125,10 +135,127 @@ To use: copy this entire file into a .html file and open in a modern browser.
       display: block;
       animation: fadeIn 0.2s ease;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      .view-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+      }
+      .view-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .view-header .eyebrow {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted-color);
+        margin-bottom: 4px;
+      }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .summary-card {
+        background: rgba(255,255,255,0.7);
+        border-radius: 10px;
+        padding: 12px;
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(0,0,0,0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .dark .summary-card {
+        background: rgba(44,44,44,0.8);
+        border-color: rgba(255,255,255,0.08);
+      }
+      .summary-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      }
+      .summary-card h3 {
+        font-size: 13px;
+        color: var(--muted-color);
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .summary-card p {
+        font-size: 24px;
+        font-weight: 700;
+      }
+      .view-subtext {
+        font-size: 13px;
+        color: var(--muted-color);
+        margin-top: -8px;
+        margin-bottom: 16px;
+      }
+      .empty-state {
+        padding: 32px 16px;
+        text-align: center;
+        color: var(--muted-color);
+        border: 2px dashed rgba(0,0,0,0.08);
+        border-radius: 12px;
+        background: rgba(255,255,255,0.4);
+      }
+      .dark .empty-state {
+        border-color: rgba(255,255,255,0.15);
+        background: rgba(44,44,44,0.6);
+      }
+      .segmented-control {
+        display: inline-flex;
+        background: var(--card-bg);
+        border-radius: 999px;
+        padding: 4px;
+        gap: 4px;
+        border: 1px solid rgba(0,0,0,0.05);
+        margin-bottom: 12px;
+      }
+      .dark .segmented-control {
+        border-color: rgba(255,255,255,0.1);
+      }
+      .segmented-control button {
+        border: none;
+        background: transparent;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 12px;
+        color: var(--muted-color);
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease;
+      }
+      .segmented-control button.active {
+        background: var(--primary-color);
+        color: #fff;
+      }
+      .timeline-group {
+        margin-bottom: 20px;
+      }
+      .timeline-header {
+        font-size: 11px;
+        color: var(--muted-color);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 8px;
+      }
+      .timeline-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        display: inline-block;
+      }
 
     /* Task cards */
     .task-card {
@@ -159,13 +286,59 @@ To use: copy this entire file into a .html file and open in a modern browser.
       font-size: 15px;
       font-weight: 600;
     }
-    .task-meta {
-      font-size: 11px;
-      color: var(--muted-color);
-      display: flex;
-      gap: 8px;
-      margin-top: 4px;
-    }
+      .task-meta {
+        font-size: 11px;
+        color: var(--muted-color);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 4px;
+      }
+      .task-card.completed {
+        opacity: 0.75;
+      }
+      .task-card.completed .task-title {
+        text-decoration: line-through;
+        color: var(--muted-color);
+      }
+      .task-card .task-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .task-quick-action {
+        border: none;
+        background: rgba(0,0,0,0.05);
+        color: var(--text-color);
+        font-size: 11px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+      .task-quick-action:hover {
+        background: rgba(0,0,0,0.08);
+      }
+      .dark .task-quick-action {
+        background: rgba(255,255,255,0.1);
+        color: #fff;
+      }
+      .dark .task-quick-action:hover {
+        background: rgba(255,255,255,0.15);
+      }
+      .status-pill {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        background: rgba(0,0,0,0.05);
+        color: var(--muted-color);
+        padding: 2px 8px;
+        border-radius: 999px;
+      }
+      .status-pill.success {
+        background: rgba(80,227,194,0.2);
+        color: var(--success-color);
+      }
     .priority-low { color: var(--success-color); }
     .priority-medium { color: var(--warning-color); }
     .priority-high { color: var(--danger-color); }
@@ -385,34 +558,69 @@ To use: copy this entire file into a .html file and open in a modern browser.
       <p id="auth-toggle" style="font-size:12px;text-align:center;margin-top:8px;cursor:pointer;color:var(--primary-color);">Don't have an account? Sign up</p>
     </div>
   </div>
-  <div id="app">
-    <!-- Today View -->
-    <section id="today-view" class="view active">
-      <h1>Today</h1>
-      <div id="today-tasks"></div>
-    </section>
+    <div id="app">
+      <!-- Today View -->
+      <section id="today-view" class="view active">
+        <div class="view-header">
+          <div>
+            <p class="eyebrow">Focus</p>
+            <h1>Today</h1>
+          </div>
+          <div class="view-actions">
+            <button id="today-quick-add" class="btn btn-primary" style="white-space:nowrap;">+ Quick Add</button>
+          </div>
+        </div>
+        <p id="today-subtitle" class="view-subtext"></p>
+        <div id="today-summary" class="summary-grid"></div>
+        <div id="today-tasks"></div>
+      </section>
     <!-- All Tasks View -->
     <section id="all-view" class="view">
-      <h1>All Tasks</h1>
-      <button id="goto-category-view" class="btn btn-secondary" style="margin-bottom:12px;">View by Category</button>
-      <div class="input-group">
-        <input type="text" id="search-input" placeholder="Search tasks...">
-      </div>
-      <div class="input-group">
-        <select id="filter-category">
-          <option value="">All Categories</option>
-        </select>
-      </div>
-      <div class="input-group">
-        <select id="filter-priority">
-          <option value="">All Priorities</option>
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-        </select>
-      </div>
+        <div class="view-header">
+          <div>
+            <p class="eyebrow">Everything</p>
+            <h1>All Tasks</h1>
+          </div>
+          <div class="view-actions">
+            <button id="goto-category-view" class="btn btn-secondary" style="white-space:nowrap;">Categories</button>
+          </div>
+        </div>
+        <p class="view-subtext">Use search and filters to focus on what matters.</p>
+        <div class="segmented-control" id="status-toggle">
+          <button data-status="active" class="active">Active</button>
+          <button data-status="all">All</button>
+          <button data-status="completed">Completed</button>
+        </div>
+        <div class="input-group">
+          <input type="text" id="search-input" placeholder="Search tasks...">
+        </div>
+        <div class="input-group">
+          <select id="filter-category">
+            <option value="">All Categories</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <select id="filter-priority">
+            <option value="">All Priorities</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
       <div id="all-tasks"></div>
     </section>
+      <!-- Completed View -->
+      <section id="completed-view" class="view">
+        <div class="view-header">
+          <div>
+            <p class="eyebrow">Wins</p>
+            <h1>Completed</h1>
+          </div>
+        </div>
+        <p class="view-subtext">Celebrate progress and learn from past work.</p>
+        <div id="completed-summary" class="summary-grid"></div>
+        <div id="completed-list"></div>
+      </section>
     <!-- Category View -->
     <section id="category-view" class="view">
       <h1 style="display:flex;align-items:center;justify-content:space-between;">
@@ -478,6 +686,10 @@ To use: copy this entire file into a .html file and open in a modern browser.
       <svg viewBox="0 0 24 24"><path d="M3 13h18v-2H3v2zm0 6h18v-2H3v2zm0-12v2h18V7H3z"></path></svg>
       <span>All</span>
     </button>
+      <button data-view="completed-view">
+        <svg viewBox="0 0 24 24"><path d="M9 16.2l-3.5-3.5L4 14.2l5 5 11-11-1.5-1.5z"></path></svg>
+        <span>Done</span>
+      </button>
     <button id="add-task-nav">
       <svg viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"></path></svg>
       <span>Add</span>
@@ -614,8 +826,9 @@ To use: copy this entire file into a .html file and open in a modern browser.
       let tasks = [];
       let categories = [];
       let settings = {};
-      let editingTaskId = null;
-      let reminderTimer = null;
+    let editingTaskId = null;
+    let reminderTimer = null;
+    let statusFilter = 'active';
 
       // Firebase configuration (replace with your own project credentials).
       // To enable cross-device synchronization, set up a Firebase project and add your configuration here.
@@ -664,10 +877,11 @@ To use: copy this entire file into a .html file and open in a modern browser.
           // Persist without re-broadcasting to avoid loops
           localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
           // Refresh UI
-          renderAll();
-          renderToday();
-          renderCategoryView();
-          renderWeeklyReview();
+        renderAll();
+        renderToday();
+        renderCategoryView();
+        renderWeeklyReview();
+        renderCompletedView();
         }
       };
 
@@ -864,6 +1078,37 @@ To use: copy this entire file into a .html file and open in a modern browser.
           default: return 0;
         }
       }
+      function taskSortValue(task) {
+        const due = combineDateTime(task.date, task.time);
+        if (due) return due.getTime();
+        if (task.completedAt) return new Date(task.completedAt).getTime();
+        if (task.createdAt) return new Date(task.createdAt).getTime();
+        return 0;
+      }
+      function getCompletionDate(task) {
+        if (task.completedAt) return new Date(task.completedAt);
+        const due = combineDateTime(task.date, task.time);
+        if (due) return due;
+        return task.createdAt ? new Date(task.createdAt) : null;
+      }
+      function getDueLabel(task) {
+        if (task.completed && task.completedAt) {
+          const d = new Date(task.completedAt);
+          const dateLabel = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+          const timeLabel = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+          return `Completed ${dateLabel} · ${timeLabel}`;
+        }
+        if (task.date) {
+          const dateLabel = formatDate(task.date);
+          const timeLabel = task.time ? formatTime(task.time) : '';
+          return `${dateLabel}${timeLabel ? ' · ' + timeLabel : ''}`;
+        }
+        return 'No due date';
+      }
+      function renderEmptyState(container, message) {
+        if (!container) return;
+        container.innerHTML = `<div class="empty-state">${message}</div>`;
+      }
 
       /* ---------- Rendering Functions ---------- */
       function renderCategoriesOptions(selectEl) {
@@ -877,21 +1122,43 @@ To use: copy this entire file into a .html file and open in a modern browser.
       }
       function renderToday() {
         const container = document.getElementById('today-tasks');
+        const summaryEl = document.getElementById('today-summary');
+        const subtitleEl = document.getElementById('today-subtitle');
+        if (!container) return;
         container.innerHTML = '';
-        const todayTasks = tasks.filter(isToday).sort((a,b) => {
-          const dtA = combineDateTime(a.date,a.time);
-          const dtB = combineDateTime(b.date,b.time);
-          return dtA - dtB;
-        });
-        if (todayTasks.length === 0) {
-          container.innerHTML = '<p>No tasks for today.</p>';
-          return;
+        if (summaryEl) summaryEl.innerHTML = '';
+        const todays = tasks.filter(isToday);
+        const activeToday = todays.filter(t => !t.completed).sort((a,b) => taskSortValue(a) - taskSortValue(b));
+        const completedToday = todays.filter(t => t.completed);
+        if (subtitleEl) {
+          subtitleEl.textContent = todays.length
+            ? `${activeToday.length} active · ${completedToday.length} done today`
+            : 'No tasks scheduled for today. Add one to get started!';
         }
-        // Group into morning, afternoon, evening
+        if (summaryEl) {
+          summaryEl.innerHTML = `
+            <div class="summary-card">
+              <h3>Total today</h3>
+              <p>${todays.length}</p>
+            </div>
+            <div class="summary-card">
+              <h3>Active</h3>
+              <p>${activeToday.length}</p>
+            </div>
+            <div class="summary-card">
+              <h3>Completed</h3>
+              <p>${completedToday.length}</p>
+            </div>
+          `;
+        }
+          if (activeToday.length === 0) {
+            renderEmptyState(container, 'No active tasks for today. Tap "+ Quick Add" to schedule something important.');
+            return;
+          }
         const groups = { morning: [], afternoon: [], evening: [] };
-        todayTasks.forEach(task => {
+        activeToday.forEach(task => {
           const time = combineDateTime(task.date, task.time);
-          if (!task.time) {
+          if (!task.time || !time) {
             groups.afternoon.push(task);
           } else {
             const h = time.getHours();
@@ -909,27 +1176,44 @@ To use: copy this entire file into a .html file and open in a modern browser.
           }
         });
       }
-      function renderAll() {
-        const container = document.getElementById('all-tasks');
-        container.innerHTML = '';
-        let list = tasks.slice();
-        const search = document.getElementById('search-input').value.toLowerCase();
-        const catFilter = document.getElementById('filter-category').value;
-        const priFilter = document.getElementById('filter-priority').value;
-        if (search) list = list.filter(t => t.title.toLowerCase().includes(search));
-        if (catFilter) list = list.filter(t => t.category === catFilter);
-        if (priFilter) list = list.filter(t => t.priority === priFilter);
-        if (list.length === 0) {
-          container.innerHTML = '<p>No tasks found.</p>';
-          return;
+        function renderAll() {
+          const container = document.getElementById('all-tasks');
+          if (!container) return;
+          container.innerHTML = '';
+          let list = tasks.slice();
+          const searchEl = document.getElementById('search-input');
+          const categoryEl = document.getElementById('filter-category');
+          const priorityEl = document.getElementById('filter-priority');
+          const search = searchEl ? searchEl.value.toLowerCase() : '';
+          const catFilter = categoryEl ? categoryEl.value : '';
+          const priFilter = priorityEl ? priorityEl.value : '';
+          if (search) list = list.filter(t => t.title.toLowerCase().includes(search));
+          if (catFilter) list = list.filter(t => t.category === catFilter);
+          if (priFilter) list = list.filter(t => t.priority === priFilter);
+          if (statusFilter === 'active') list = list.filter(t => !t.completed);
+          if (statusFilter === 'completed') list = list.filter(t => t.completed);
+          if (list.length === 0) {
+            const emptyCopy = statusFilter === 'completed'
+              ? 'No completed tasks yet. Finish a task to see it here.'
+              : statusFilter === 'active'
+                ? 'Everything on your list is done. Nice work!'
+                : 'No tasks match the current filters.';
+            renderEmptyState(container, emptyCopy);
+            return;
+          }
+          if (statusFilter === 'completed') {
+            list.sort((a, b) => {
+              const aDate = getCompletionDate(a);
+              const bDate = getCompletionDate(b);
+              const aTime = aDate ? aDate.getTime() : 0;
+              const bTime = bDate ? bDate.getTime() : 0;
+              return bTime - aTime;
+            });
+          } else {
+            list.sort((a,b) => taskSortValue(a) - taskSortValue(b));
+          }
+          list.forEach(task => container.appendChild(createTaskCard(task)));
         }
-        list.sort((a,b) => {
-          const da = combineDateTime(a.date,a.time);
-          const db = combineDateTime(b.date,b.time);
-          return da - db;
-        });
-        list.forEach(task => container.appendChild(createTaskCard(task)));
-      }
       function renderCategoryView() {
         const container = document.getElementById('category-list');
         container.innerHTML = '';
@@ -937,15 +1221,29 @@ To use: copy this entire file into a .html file and open in a modern browser.
           const catTasks = tasks.filter(t => t.category === cat.id);
           const section = document.createElement('div');
           const header = document.createElement('h2');
-          header.textContent = `${cat.name} (${catTasks.length})`;
+            const activeCount = catTasks.filter(t => !t.completed).length;
+            const completedCount = catTasks.filter(t => t.completed).length;
+            header.textContent = cat.name;
           section.appendChild(header);
-          if (catTasks.length) {
-            catTasks.forEach(task => section.appendChild(createTaskCard(task)));
-          } else {
-            const p = document.createElement('p');
-            p.textContent = 'No tasks.';
-            section.appendChild(p);
-          }
+            const summary = document.createElement('p');
+            summary.className = 'view-subtext';
+            summary.textContent = `${activeCount} active · ${completedCount} completed`;
+            section.appendChild(summary);
+            const activeTasks = catTasks.filter(t => !t.completed);
+            if (activeTasks.length) {
+              activeTasks.forEach(task => section.appendChild(createTaskCard(task)));
+            } else {
+              const p = document.createElement('p');
+              p.className = 'view-subtext';
+              p.textContent = 'No active tasks in this category.';
+              section.appendChild(p);
+            }
+            if (completedCount) {
+              const completedHint = document.createElement('p');
+              completedHint.className = 'view-subtext';
+              completedHint.textContent = `View ${completedCount} completed task${completedCount === 1 ? '' : 's'} in the Completed tab.`;
+              section.appendChild(completedHint);
+            }
           container.appendChild(section);
         });
       }
@@ -970,6 +1268,73 @@ To use: copy this entire file into a .html file and open in a modern browser.
           renderStats();
         }
       }
+        function renderCompletedView() {
+          const listEl = document.getElementById('completed-list');
+          const summaryEl = document.getElementById('completed-summary');
+          if (!listEl || !summaryEl) return;
+          listEl.innerHTML = '';
+          summaryEl.innerHTML = '';
+          const completedTasks = tasks.filter(t => t.completed);
+          if (!completedTasks.length) {
+            renderEmptyState(listEl, 'Complete a task to see it celebrated here.');
+            summaryEl.innerHTML = `
+              <div class="summary-card">
+                <h3>Completed</h3>
+                <p>0</p>
+              </div>
+            `;
+            return;
+          }
+          const weeklyDone = completedTasks.filter(completedLast7).length;
+          const highDone = completedTasks.filter(t => t.priority === 'high').length;
+          summaryEl.innerHTML = `
+            <div class="summary-card">
+              <h3>Total done</h3>
+              <p>${completedTasks.length}</p>
+            </div>
+            <div class="summary-card">
+              <h3>This week</h3>
+              <p>${weeklyDone}</p>
+            </div>
+            <div class="summary-card">
+              <h3>High priority</h3>
+              <p>${highDone}</p>
+            </div>
+          `;
+          const grouped = completedTasks.reduce((acc, task) => {
+            const date = getCompletionDate(task);
+            const key = date ? date.toISOString().split('T')[0] : 'undated';
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(task);
+            return acc;
+          }, {});
+          const sortedKeys = Object.keys(grouped).sort((a, b) => {
+            if (a === 'undated') return 1;
+            if (b === 'undated') return -1;
+            return new Date(b) - new Date(a);
+          });
+          sortedKeys.forEach(key => {
+            const groupEl = document.createElement('div');
+            groupEl.className = 'timeline-group';
+            const header = document.createElement('div');
+            header.className = 'timeline-header';
+            const label = key === 'undated'
+              ? 'No completion date'
+              : new Date(key).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+            header.innerHTML = `<span class="timeline-dot"></span>${label}`;
+            groupEl.appendChild(header);
+            grouped[key]
+              .sort((a, b) => {
+                const aDate = getCompletionDate(a);
+                const bDate = getCompletionDate(b);
+                const aTime = aDate ? aDate.getTime() : 0;
+                const bTime = bDate ? bDate.getTime() : 0;
+                return bTime - aTime;
+              })
+              .forEach(task => groupEl.appendChild(createTaskCard(task)));
+            listEl.appendChild(groupEl);
+          });
+        }
 
       // Display aggregate statistics for tasks and categories
       function renderStats() {
@@ -1042,7 +1407,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
             categories = categories.filter(c => c.id !== cat.id);
             tasks.forEach(t => { if (t.category === cat.id) t.category = ''; });
             saveCategories(); saveTasks();
-            renderSettings(); renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview();
+          renderSettings(); renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview(); renderCompletedView();
           };
           row.appendChild(span);
           row.appendChild(del);
@@ -1057,7 +1422,8 @@ To use: copy this entire file into a .html file and open in a modern browser.
       function createTaskCard(task) {
         const card = document.createElement('div');
         card.className = 'task-card';
-        if (isOverdue(task)) card.classList.add('overdue');
+        if (task.completed) card.classList.add('completed');
+        if (!task.completed && isOverdue(task)) card.classList.add('overdue');
         const icon = document.createElement('div');
         icon.className = 'task-icon';
         const cat = categories.find(c => c.id === task.category);
@@ -1067,25 +1433,46 @@ To use: copy this entire file into a .html file and open in a modern browser.
         const title = document.createElement('div');
         title.className = 'task-title';
         title.textContent = task.title;
+        content.appendChild(title);
+        if (task.completed) {
+          const status = document.createElement('span');
+          status.className = 'status-pill success';
+          status.textContent = 'Completed';
+          content.appendChild(status);
+        }
         const meta = document.createElement('div');
         meta.className = 'task-meta';
-        const date = combineDateTime(task.date, task.time);
-        meta.innerHTML = `${task.date ? formatDate(task.date) : ''} ${task.time ? formatTime(task.time) : ''}`;
+        const dueSpan = document.createElement('span');
+        dueSpan.textContent = getDueLabel(task);
+        meta.appendChild(dueSpan);
         const priSpan = document.createElement('span');
         priSpan.textContent = task.priority;
         priSpan.className = `priority-${task.priority}`;
         meta.appendChild(priSpan);
-        if (isOverdue(task)) {
+        if (!task.completed && isOverdue(task)) {
           const o = document.createElement('span');
           o.textContent = 'Overdue';
           o.style.color = varGet('--danger-color');
           meta.appendChild(o);
         }
-        content.appendChild(title);
         content.appendChild(meta);
+        const actionRow = document.createElement('div');
+        actionRow.className = 'task-actions';
+        if (!task.completed) {
+          const doneBtn = document.createElement('button');
+          doneBtn.className = 'task-quick-action';
+          doneBtn.textContent = 'Mark done';
+          doneBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            completeTask(task.id);
+          });
+          actionRow.appendChild(doneBtn);
+        }
+        if (actionRow.children.length) {
+          content.appendChild(actionRow);
+        }
         card.appendChild(icon);
         card.appendChild(content);
-        // Add event
         card.onclick = () => openTaskDetail(task.id);
         return card;
       }
@@ -1265,7 +1652,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
           });
           saveTasks();
           document.getElementById('summary-modal').classList.remove('active');
-          renderAll(); renderToday(); renderWeeklyReview(); renderCategoryView();
+        renderAll(); renderToday(); renderWeeklyReview(); renderCategoryView(); renderCompletedView();
         };
         document.getElementById('summary-close').onclick = () => {
           document.getElementById('summary-modal').classList.remove('active');
@@ -1309,40 +1696,40 @@ To use: copy this entire file into a .html file and open in a modern browser.
         }
         saveTasks();
         closeTaskModal();
-        renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview();
+          renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview(); renderCompletedView();
       }
-      function deleteTask(id) {
-        tasks = tasks.filter(t => t.id !== id);
-        saveTasks();
-        renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview();
-      }
-      function completeTask(id) {
-        const task = tasks.find(t => t.id === id);
-        if (!task) return;
-        task.completed = true;
-        task.completedAt = new Date().toISOString();
-        task.nextReminder = null;
-        saveTasks();
-        // If recurring, generate new
-        if (task.repeat && task.repeat !== 'none') {
-          const next = getNextOccurrence(task);
-          if (next) {
-            const newId = uuid();
-            const newTask = Object.assign({}, task, {
-              id: newId,
-              date: next.toISOString().split('T')[0],
-              time: task.time,
-              completed: false,
-              completedAt: null,
-              nextReminder: next.getTime(),
-              subtasks: task.subtasks ? task.subtasks.map(st => ({ id: uuid(), title: st.title, completed: false })) : []
-            });
-            tasks.push(newTask);
-          }
+        function deleteTask(id) {
+          tasks = tasks.filter(t => t.id !== id);
+          saveTasks();
+          renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview(); renderCompletedView();
         }
-        saveTasks();
-        renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview();
-      }
+        function completeTask(id) {
+          const task = tasks.find(t => t.id === id);
+          if (!task) return;
+          task.completed = true;
+          task.completedAt = new Date().toISOString();
+          task.nextReminder = null;
+          saveTasks();
+          // If recurring, generate new
+          if (task.repeat && task.repeat !== 'none') {
+            const next = getNextOccurrence(task);
+            if (next) {
+              const newId = uuid();
+              const newTask = Object.assign({}, task, {
+                id: newId,
+                date: next.toISOString().split('T')[0],
+                time: task.time,
+                completed: false,
+                completedAt: null,
+                nextReminder: next.getTime(),
+                subtasks: task.subtasks ? task.subtasks.map(st => ({ id: uuid(), title: st.title, completed: false })) : []
+              });
+              tasks.push(newTask);
+            }
+          }
+          saveTasks();
+          renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview(); renderCompletedView();
+        }
 
       /* ---------- Reminder & Summary Scheduler ---------- */
       function startReminderCheck() {
@@ -1423,8 +1810,8 @@ To use: copy this entire file into a .html file and open in a modern browser.
             settings.theme = data.settings.theme || settings.theme;
           }
           saveTasks(); saveCategories(); saveSettings();
-          // Refresh UI after pulling remote data
-          renderToday(); renderAll(); renderCategoryView(); renderWeeklyReview(); renderSettings();
+        // Refresh UI after pulling remote data
+        renderToday(); renderAll(); renderCategoryView(); renderWeeklyReview(); renderCompletedView(); renderSettings();
           broadcastUpdate();
         } catch (e) {
           console.log('Remote fetch error:', e.message);
@@ -1480,6 +1867,14 @@ To use: copy this entire file into a .html file and open in a modern browser.
         document.getElementById('add-task-nav').addEventListener('click', () => {
           openTaskModal(null);
         });
+          const quickAddBtn = document.getElementById('today-quick-add');
+          if (quickAddBtn) {
+            quickAddBtn.addEventListener('click', () => {
+              openTaskModal(null);
+              const dateEl = document.getElementById('task-date');
+              if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+            });
+          }
         // Modal save/cancel
         document.getElementById('task-cancel').addEventListener('click', closeTaskModal);
         document.getElementById('task-save').addEventListener('click', saveTaskFromModal);
@@ -1487,6 +1882,17 @@ To use: copy this entire file into a .html file and open in a modern browser.
         document.getElementById('search-input').addEventListener('input', renderAll);
         document.getElementById('filter-category').addEventListener('change', renderAll);
         document.getElementById('filter-priority').addEventListener('change', renderAll);
+          const statusToggle = document.getElementById('status-toggle');
+          if (statusToggle) {
+            statusToggle.querySelectorAll('button').forEach(btn => {
+              btn.addEventListener('click', () => {
+                statusFilter = btn.getAttribute('data-status');
+                statusToggle.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderAll();
+              });
+            });
+          }
         // Settings change
         document.getElementById('summary-time').addEventListener('change', (e) => {
           settings.summaryTime = e.target.value;
@@ -1569,11 +1975,12 @@ To use: copy this entire file into a .html file and open in a modern browser.
               saveSettings();
               document.getElementById('import-textarea').style.display = 'none';
               document.getElementById('import-actions').style.display = 'none';
-              renderSettings();
-              renderToday();
-              renderAll();
-              renderCategoryView();
-              renderWeeklyReview();
+                renderSettings();
+                renderToday();
+                renderAll();
+                renderCategoryView();
+                renderWeeklyReview();
+                renderCompletedView();
               alert('Data imported successfully.');
             } catch (e) {
               alert('Invalid JSON. Please ensure you pasted the exported data correctly.');
@@ -1622,6 +2029,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
           renderAll();
         }
         if (viewId === 'category-view') renderCategoryView();
+      if (viewId === 'completed-view') renderCompletedView();
         if (viewId === 'weekly-view') renderWeeklyReview();
         if (viewId === 'settings-view') renderSettings();
       }
@@ -1706,12 +2114,13 @@ To use: copy this entire file into a .html file and open in a modern browser.
               saveCategories();
               saveSettings();
               // Apply theme and refresh UI
-              document.body.classList.toggle('dark', settings.theme === 'dark');
-              renderToday();
-              renderAll();
-              renderCategoryView();
-              renderWeeklyReview();
-              renderSettings();
+        document.body.classList.toggle('dark', settings.theme === 'dark');
+        renderToday();
+        renderAll();
+        renderCategoryView();
+        renderWeeklyReview();
+        renderCompletedView();
+        renderSettings();
               // Subscribe to document changes to sync in real-time
               if (unsubscribeDoc) unsubscribeDoc();
               unsubscribeDoc = userDocRef.onSnapshot((snapshot) => {
@@ -1725,12 +2134,13 @@ To use: copy this entire file into a .html file and open in a modern browser.
                 saveTasks();
                 saveCategories();
                 saveSettings();
-                document.body.classList.toggle('dark', settings.theme === 'dark');
-                renderToday();
-                renderAll();
-                renderCategoryView();
-                renderWeeklyReview();
-                renderSettings();
+                  document.body.classList.toggle('dark', settings.theme === 'dark');
+                  renderToday();
+                  renderAll();
+                  renderCategoryView();
+                  renderWeeklyReview();
+                  renderCompletedView();
+                  renderSettings();
               });
             } else {
               // Logged out: show overlay and clear reference
@@ -1743,12 +2153,13 @@ To use: copy this entire file into a .html file and open in a modern browser.
               loadCategories();
               loadSettings();
               // Apply theme and refresh UI with local data
-              document.body.classList.toggle('dark', settings.theme === 'dark');
-              renderToday();
-              renderAll();
-              renderCategoryView();
-              renderWeeklyReview();
-              renderSettings();
+                document.body.classList.toggle('dark', settings.theme === 'dark');
+                renderToday();
+                renderAll();
+                renderCategoryView();
+                renderWeeklyReview();
+                renderCompletedView();
+                renderSettings();
             }
           });
         }
@@ -1764,6 +2175,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
         renderAll();
         renderCategoryView();
         renderWeeklyReview();
+        renderCompletedView();
         renderSettings();
         // Start reminder scheduler
         startReminderCheck();
