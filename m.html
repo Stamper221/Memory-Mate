@@ -72,6 +72,8 @@ To use: copy this entire file into a .html file and open in a modern browser.
       flex-direction: column;
       overflow: hidden;
       transition: background 0.3s ease, color 0.3s ease;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     body::before {
       content: "";
@@ -87,6 +89,8 @@ To use: copy this entire file into a .html file and open in a modern browser.
       flex: 1;
       overflow-y: auto;
       padding-bottom: 60px; /* Space for nav */
+      -webkit-overflow-scrolling: touch;
+      transform: translateZ(0);
     }
 
     /* Navigation bar */
@@ -135,6 +139,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
       padding: 16px;
       max-width: 600px;
       margin: 0 auto;
+      transform: translateZ(0);
     }
     section.view.active {
       display: block;
@@ -175,16 +180,15 @@ To use: copy this entire file into a .html file and open in a modern browser.
         background: rgba(255,255,255,0.7);
         border-radius: 10px;
         padding: 12px;
-        backdrop-filter: blur(6px);
         border: 1px solid rgba(0,0,0,0.05);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        transition: box-shadow 0.2s ease;
+        transform: translateZ(0);
       }
       .dark .summary-card {
         background: rgba(44,44,44,0.8);
         border-color: rgba(255,255,255,0.08);
       }
       .summary-card:hover {
-        transform: translateY(-2px);
         box-shadow: 0 8px 20px rgba(0,0,0,0.08);
       }
       .summary-card h3 {
@@ -273,11 +277,13 @@ To use: copy this entire file into a .html file and open in a modern browser.
         display: flex;
         align-items: flex-start;
         gap: 12px;
-        transition: transform 0.2s;
+        transition: box-shadow 0.2s ease;
         cursor: pointer;
+        transform: translateZ(0);
+        backface-visibility: hidden;
       }
     .task-card:hover {
-      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
     .task-icon {
       width: 20px;
