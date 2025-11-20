@@ -832,10 +832,11 @@ To use: copy this entire file into a .html file and open in a modern browser.
     // MemoryMate JavaScript logic
     (function() {
       // Data keys
-      const TASKS_KEY = 'mm_tasks';
-      const CATEGORIES_KEY = 'mm_categories';
-      const SETTINGS_KEY = 'mm_settings';
-      const SUMMARY_SHOWN_KEY = 'mm_summary_shown';
+    const TASKS_KEY = 'mm_tasks';
+    const CATEGORIES_KEY = 'mm_categories';
+    const SETTINGS_KEY = 'mm_settings';
+    const SUMMARY_SHOWN_KEY = 'mm_summary_shown';
+    const PENDING_SYNC_KEY = 'mm_pending_cloud_sync';
 
       // Remote synchronization via Firebase (no remote JSON). The DEFAULT_REMOTE_URL constant
       // has been removed because remote sync is now managed through an online database.
@@ -845,7 +846,8 @@ To use: copy this entire file into a .html file and open in a modern browser.
     let categories = [];
     let settings = {};
     let editingTaskId = null;
-    let reminderTimer = null;
+  let reminderTimer = null;
+  let cloudSyncTimer = null;
     let statusFilter = 'active';
     let authOverlayDismissed = false;
 
@@ -902,8 +904,8 @@ To use: copy this entire file into a .html file and open in a modern browser.
           syncChannel.onmessage = (event) => {
             if (event.data && event.data.type === 'syncUpdate') {
               tasks = event.data.tasks || [];
-              // Persist without re-broadcasting to avoid loops
-              localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+        // Persist without re-broadcasting to avoid loops
+        saveTasks({ skipRemote: true, skipBroadcast: true });
               // Refresh UI
               renderAll();
               renderToday();
@@ -925,6 +927,73 @@ To use: copy this entire file into a .html file and open in a modern browser.
         { id: 'later', name: 'For Later', color: '#95a5a6' }
       ];
 
+    /* ---------- Sync Helpers ---------- */
+    function markPendingSync() {
+      try {
+        localStorage.setItem(PENDING_SYNC_KEY, 'true');
+      } catch (err) {
+        console.warn('Unable to flag pending sync:', err);
+      }
+    }
+    function clearPendingSyncFlag() {
+      try {
+        localStorage.removeItem(PENDING_SYNC_KEY);
+      } catch (err) {
+        console.warn('Unable to clear pending sync flag:', err);
+      }
+    }
+    function hasPendingLocalSync() {
+      try {
+        return localStorage.getItem(PENDING_SYNC_KEY) === 'true';
+      } catch (err) {
+        return false;
+      }
+    }
+    function scheduleCloudSync() {
+      if (!userDocRef) return;
+      if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
+      cloudSyncTimer = setTimeout(() => {
+        pushStateToCloud();
+      }, 250);
+    }
+    async function pushStateToCloud() {
+      if (!userDocRef || !hasPendingLocalSync()) return;
+      const payload = {
+        tasks,
+        categories,
+        settings,
+        lastSyncedAt: new Date().toISOString()
+      };
+      try {
+        await userDocRef.set(payload, { merge: true });
+        clearPendingSyncFlag();
+      } catch (err) {
+        console.log('Error saving data to Firestore:', err);
+        markPendingSync();
+        scheduleCloudSync();
+      } finally {
+        cloudSyncTimer = null;
+      }
+    }
+    function mergeListsById(remoteList = [], localList = []) {
+      const map = new Map();
+      if (Array.isArray(remoteList)) {
+        remoteList.forEach(item => {
+          if (item && item.id) {
+            map.set(item.id, Object.assign({}, item));
+          }
+        });
+      }
+      if (Array.isArray(localList)) {
+        localList.forEach(item => {
+          if (item && item.id) {
+            map.set(item.id, Object.assign({}, item));
+          }
+        });
+      }
+      return Array.from(map.values());
+    }
+
       /* ---------- Utility Functions ---------- */
       // Generate a simple unique ID
       function uuid() {
@@ -936,20 +1005,18 @@ To use: copy this entire file into a .html file and open in a modern browser.
           tasks = JSON.parse(localStorage.getItem(TASKS_KEY)) || [];
         } catch (e) { tasks = []; }
       }
-      // Save tasks to localStorage
-      function saveTasks() {
-        localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-        // broadcast update to other tabs/windows
+    // Save tasks to localStorage
+    function saveTasks(options = {}) {
+      const { skipRemote = false, skipBroadcast = false } = options;
+      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+      if (!skipBroadcast) {
         broadcastUpdate();
-        // Save tasks, categories and settings to Firestore when logged in
-        if (userDocRef) {
-          try {
-            userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
-          } catch (err) {
-            console.log('Error saving tasks to Firestore:', err);
-          }
-        }
       }
+      if (!skipRemote) {
+        markPendingSync();
+        scheduleCloudSync();
+      }
+    }
       // Load categories from localStorage or default
       function loadCategories() {
         try {
@@ -959,18 +1026,15 @@ To use: copy this entire file into a .html file and open in a modern browser.
           categories = defaultCategories;
         }
       }
-        function saveCategories() {
-          localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
-          refreshCategorySelects();
-        // Save to Firestore when logged in
-        if (userDocRef) {
-          try {
-            userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
-          } catch (err) {
-            console.log('Error saving categories to Firestore:', err);
-          }
-        }
+      function saveCategories(options = {}) {
+        const { skipRemote = false } = options;
+        localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+        refreshCategorySelects();
+      if (!skipRemote) {
+        markPendingSync();
+        scheduleCloudSync();
       }
+    }
       // Load settings from localStorage or default
       function loadSettings() {
         try {
@@ -982,17 +1046,14 @@ To use: copy this entire file into a .html file and open in a modern browser.
         }
         // Removed remoteUrl key: synchronization is managed via Firebase.
       }
-      function saveSettings() {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-        // Save to Firestore when logged in
-        if (userDocRef) {
-          try {
-            userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
-          } catch (err) {
-            console.log('Error saving settings to Firestore:', err);
-          }
-        }
+    function saveSettings(options = {}) {
+      const { skipRemote = false } = options;
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      if (!skipRemote) {
+        markPendingSync();
+        scheduleCloudSync();
       }
+    }
       // Format date/time strings for display
       function formatDate(dateStr) {
         // Parse date string as local date to avoid timezone offset issues when formatting.
@@ -2128,19 +2189,29 @@ To use: copy this entire file into a .html file and open in a modern browser.
               overlay.style.display = 'none';
               authOverlayDismissed = false;
               userDocRef = db.collection('users').doc(usr.uid);
-              const docSnap = await userDocRef.get();
-              if (!docSnap.exists) {
+              let dataSnap = await userDocRef.get();
+              if (!dataSnap.exists) {
                 await userDocRef.set({ tasks: [], categories: defaultCategories, settings: { summaryTime: '20:00', theme: 'light' } });
+                dataSnap = await userDocRef.get();
               }
-              const dataSnap = await userDocRef.get();
               const data = dataSnap.data() || {};
-              tasks = data.tasks || [];
-              categories = data.categories || defaultCategories.slice();
-              settings.summaryTime = data.settings && data.settings.summaryTime ? data.settings.summaryTime : settings.summaryTime;
-              settings.theme = data.settings && data.settings.theme ? data.settings.theme : settings.theme;
-              saveTasks();
-              saveCategories();
-              saveSettings();
+              const remoteTasks = Array.isArray(data.tasks) ? data.tasks : [];
+              const remoteCategories = Array.isArray(data.categories) ? data.categories : defaultCategories.slice();
+              const remoteSettings = Object.assign({ summaryTime: '20:00', theme: 'light' }, data.settings || {});
+              const pendingLocalChanges = hasPendingLocalSync();
+              if (pendingLocalChanges) {
+                tasks = mergeListsById(remoteTasks, tasks);
+                categories = mergeListsById(remoteCategories, categories);
+                settings = Object.assign({}, remoteSettings, settings);
+              } else {
+                tasks = remoteTasks;
+                categories = remoteCategories;
+                settings = remoteSettings;
+                clearPendingSyncFlag();
+              }
+              saveTasks({ skipRemote: true });
+              saveCategories({ skipRemote: true });
+              saveSettings({ skipRemote: true });
               document.body.classList.toggle('dark', settings.theme === 'dark');
               renderToday();
               renderAll();
@@ -2151,14 +2222,16 @@ To use: copy this entire file into a .html file and open in a modern browser.
               if (unsubscribeDoc) unsubscribeDoc();
               unsubscribeDoc = userDocRef.onSnapshot((snapshot) => {
                 if (!snapshot.exists) return;
-                const remoteData = snapshot.data();
-                tasks = remoteData.tasks || [];
-                categories = remoteData.categories || defaultCategories.slice();
-                settings.summaryTime = remoteData.settings && remoteData.settings.summaryTime ? remoteData.settings.summaryTime : settings.summaryTime;
-                settings.theme = remoteData.settings && remoteData.settings.theme ? remoteData.settings.theme : settings.theme;
-                saveTasks();
-                saveCategories();
-                saveSettings();
+                const remoteData = snapshot.data() || {};
+                tasks = Array.isArray(remoteData.tasks) ? remoteData.tasks : [];
+                categories = Array.isArray(remoteData.categories) ? remoteData.categories : defaultCategories.slice();
+                const remoteSettingsData = remoteData.settings || {};
+                settings = Object.assign({}, settings, remoteSettingsData);
+                if (!settings.summaryTime) settings.summaryTime = '20:00';
+                if (!settings.theme) settings.theme = 'light';
+                saveTasks({ skipRemote: true });
+                saveCategories({ skipRemote: true });
+                saveSettings({ skipRemote: true });
                 document.body.classList.toggle('dark', settings.theme === 'dark');
                 renderToday();
                 renderAll();
@@ -2167,7 +2240,14 @@ To use: copy this entire file into a .html file and open in a modern browser.
                 renderCompletedView();
                 renderSettings();
               });
+              if (pendingLocalChanges || hasPendingLocalSync()) {
+                scheduleCloudSync();
+              }
             } else {
+              if (cloudSyncTimer) {
+                clearTimeout(cloudSyncTimer);
+                cloudSyncTimer = null;
+              }
               userDocRef = null;
               if (unsubscribeDoc) unsubscribeDoc();
               unsubscribeDoc = null;
