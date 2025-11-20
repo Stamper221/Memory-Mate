@@ -854,6 +854,8 @@ To use: copy this entire file into a .html file and open in a modern browser.
   let cloudSyncTimer = null;
     let statusFilter = 'active';
     let authOverlayDismissed = false;
+    let isApplyingRemoteUpdate = false;
+    let lastLocalSyncTimestamp = null;
 
       // Firebase configuration (replace with your own project credentials).
       // To enable cross-device synchronization, set up a Firebase project and add your configuration here.
@@ -961,12 +963,14 @@ To use: copy this entire file into a .html file and open in a modern browser.
       }, 250);
     }
     async function pushStateToCloud() {
-      if (!userDocRef || !hasPendingLocalSync()) return;
+      if (!userDocRef || !hasPendingLocalSync() || isApplyingRemoteUpdate) return;
+      const syncTimestamp = new Date().toISOString();
+      lastLocalSyncTimestamp = syncTimestamp;
       const payload = {
         tasks,
         categories,
         settings,
-        lastSyncedAt: new Date().toISOString()
+        lastSyncedAt: syncTimestamp
       };
       try {
         await userDocRef.set(payload, { merge: true });
@@ -981,6 +985,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
     }
     function mergeListsById(remoteList = [], localList = []) {
       const map = new Map();
+      // First add all remote items
       if (Array.isArray(remoteList)) {
         remoteList.forEach(item => {
           if (item && item.id) {
@@ -988,10 +993,33 @@ To use: copy this entire file into a .html file and open in a modern browser.
           }
         });
       }
+      // Then merge local items, keeping the newer version based on lastModified timestamp
       if (Array.isArray(localList)) {
         localList.forEach(item => {
           if (item && item.id) {
-            map.set(item.id, Object.assign({}, item));
+            const existing = map.get(item.id);
+            if (!existing) {
+              // New item, add it
+              map.set(item.id, Object.assign({}, item));
+            } else {
+              // Both exist, keep the one with the newer lastModified timestamp
+              // If no timestamp, use createdAt as fallback, or current time if neither exists
+              const remoteTime = existing.lastModified 
+                ? new Date(existing.lastModified).getTime() 
+                : (existing.createdAt ? new Date(existing.createdAt).getTime() : 0);
+              const localTime = item.lastModified 
+                ? new Date(item.lastModified).getTime() 
+                : (item.createdAt ? new Date(item.createdAt).getTime() : 0);
+              // If remote is newer, keep remote (from another device)
+              // If local is newer or equal, keep local (our recent edit)
+              if (remoteTime > localTime) {
+                // Remote is newer, keep remote
+                map.set(item.id, Object.assign({}, existing));
+              } else {
+                // Local is newer or equal, keep local
+                map.set(item.id, Object.assign({}, item));
+              }
+            }
           }
         });
       }
@@ -1007,26 +1035,48 @@ To use: copy this entire file into a .html file and open in a modern browser.
       function loadTasks() {
         try {
           tasks = JSON.parse(localStorage.getItem(TASKS_KEY)) || [];
+          // Ensure all tasks have lastModified timestamp for sync
+          tasks.forEach(task => {
+            if (!task.lastModified) {
+              task.lastModified = task.createdAt || new Date().toISOString();
+            }
+          });
         } catch (e) { tasks = []; }
       }
     // Save tasks to localStorage
     function saveTasks(options = {}) {
       const { skipRemote = false, skipBroadcast = false } = options;
+      // Update lastModified timestamp for modified tasks
+      if (!isApplyingRemoteUpdate) {
+        tasks.forEach(task => {
+          if (!task.lastModified || task._localModified) {
+            task.lastModified = new Date().toISOString();
+            delete task._localModified;
+          }
+        });
+      }
       localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
       if (!skipBroadcast) {
         broadcastUpdate();
       }
-      if (!skipRemote && userDocRef) {
+      if (!skipRemote && userDocRef && !isApplyingRemoteUpdate) {
         // Save immediately to Firestore when logged in
         try {
-          userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
+          const syncTimestamp = new Date().toISOString();
+          lastLocalSyncTimestamp = syncTimestamp;
+          userDocRef.set({ 
+            tasks: tasks, 
+            categories: categories, 
+            settings: settings,
+            lastSyncedAt: syncTimestamp
+          }, { merge: true });
         } catch (err) {
           console.log('Error saving tasks to Firestore:', err);
           // Fallback to scheduled sync if immediate save fails
           markPendingSync();
           scheduleCloudSync();
         }
-      } else if (!skipRemote) {
+      } else if (!skipRemote && !isApplyingRemoteUpdate) {
         markPendingSync();
         scheduleCloudSync();
       }
@@ -1044,16 +1094,23 @@ To use: copy this entire file into a .html file and open in a modern browser.
         const { skipRemote = false } = options;
         localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
         refreshCategorySelects();
-        if (!skipRemote && userDocRef) {
+        if (!skipRemote && userDocRef && !isApplyingRemoteUpdate) {
           // Save immediately to Firestore when logged in
           try {
-            userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
+            const syncTimestamp = new Date().toISOString();
+            lastLocalSyncTimestamp = syncTimestamp;
+            userDocRef.set({ 
+              tasks: tasks, 
+              categories: categories, 
+              settings: settings,
+              lastSyncedAt: syncTimestamp
+            }, { merge: true });
           } catch (err) {
             console.log('Error saving categories to Firestore:', err);
             markPendingSync();
             scheduleCloudSync();
           }
-        } else if (!skipRemote) {
+        } else if (!skipRemote && !isApplyingRemoteUpdate) {
           markPendingSync();
           scheduleCloudSync();
         }
@@ -1072,16 +1129,23 @@ To use: copy this entire file into a .html file and open in a modern browser.
     function saveSettings(options = {}) {
       const { skipRemote = false } = options;
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-      if (!skipRemote && userDocRef) {
+      if (!skipRemote && userDocRef && !isApplyingRemoteUpdate) {
         // Save immediately to Firestore when logged in
         try {
-          userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
+          const syncTimestamp = new Date().toISOString();
+          lastLocalSyncTimestamp = syncTimestamp;
+          userDocRef.set({ 
+            tasks: tasks, 
+            categories: categories, 
+            settings: settings,
+            lastSyncedAt: syncTimestamp
+          }, { merge: true });
         } catch (err) {
           console.log('Error saving settings to Firestore:', err);
           markPendingSync();
           scheduleCloudSync();
         }
-      } else if (!skipRemote) {
+      } else if (!skipRemote && !isApplyingRemoteUpdate) {
         markPendingSync();
         scheduleCloudSync();
       }
@@ -1704,6 +1768,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
           cb.checked = sub.completed;
           cb.onchange = () => {
             sub.completed = cb.checked;
+            task._localModified = true; // Flag to update timestamp
             saveTasks();
           };
           const span = document.createElement('span');
@@ -1728,6 +1793,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
           const val = input.value.trim();
           if (!val) return;
           task.subtasks.push({ id: uuid(), title: val, completed: false });
+          task._localModified = true; // Flag to update timestamp
           input.value = '';
           saveTasks();
           openTaskDetail(taskId); // rerender
@@ -1770,6 +1836,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
             if (!task) return;
             const nextTime = addMinutes(new Date(), mins);
             task.nextReminder = nextTime.getTime();
+            task._localModified = true; // Flag to update timestamp
             saveTasks();
             snooze.classList.remove('active');
           };
@@ -1810,6 +1877,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
             task.date = tomorrow.toISOString().split('T')[0];
             // keep time same
             task.nextReminder = combineDateTime(task.date, task.time) ? combineDateTime(task.date, task.time).getTime() : null;
+            task._localModified = true; // Flag to update timestamp
           });
           saveTasks();
           document.getElementById('summary-modal').classList.remove('active');
@@ -1843,6 +1911,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
             existing.priority = priority;
             existing.repeat = repeat;
             existing.nag = nag;
+            existing._localModified = true; // Flag to update timestamp
             if (dueDT) {
               existing.nextReminder = dueDT.getTime();
             } else if (!existing.completed) {
@@ -1863,7 +1932,8 @@ To use: copy this entire file into a .html file and open in a modern browser.
               completedAt: null,
               nextReminder: dueDT ? dueDT.getTime() : null,
               subtasks: [],
-              createdAt: new Date().toISOString()
+              createdAt: new Date().toISOString(),
+              lastModified: new Date().toISOString()
             };
             tasks.push(newTask);
           }
@@ -1874,6 +1944,8 @@ To use: copy this entire file into a .html file and open in a modern browser.
       }
         function deleteTask(id) {
           tasks = tasks.filter(t => t.id !== id);
+          // Mark all tasks as potentially modified since we're deleting
+          tasks.forEach(t => { t._localModified = true; });
           saveTasks();
           renderAll(); renderToday(); renderCategoryView(); renderWeeklyReview(); renderCompletedView();
         }
@@ -1883,6 +1955,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
           task.completed = true;
           task.completedAt = new Date().toISOString();
           task.nextReminder = null;
+          task._localModified = true; // Flag to update timestamp
           saveTasks();
           // If recurring, generate new
           if (task.repeat && task.repeat !== 'none') {
@@ -1931,6 +2004,7 @@ To use: copy this entire file into a .html file and open in a modern browser.
             task.nextReminder = next.getTime();
           }
         }
+        task._localModified = true; // Flag to update timestamp
         saveTasks();
         const toast = document.getElementById('reminder-toast');
         toast.innerHTML = `${task.title} due! <button id="rem-done">Done</button> <button id="rem-snooze">Snooze</button>`;
@@ -2245,7 +2319,14 @@ To use: copy this entire file into a .html file and open in a modern browser.
               saveSettings({ skipRemote: true });
               // Sync merged data back to Firestore
               try {
-                await userDocRef.set({ tasks: tasks, categories: categories, settings: settings }, { merge: true });
+                const syncTimestamp = new Date().toISOString();
+                lastLocalSyncTimestamp = syncTimestamp;
+                await userDocRef.set({ 
+                  tasks: tasks, 
+                  categories: categories, 
+                  settings: settings,
+                  lastSyncedAt: syncTimestamp
+                }, { merge: true });
                 clearPendingSyncFlag();
               } catch (err) {
                 console.log('Error syncing merged data to Firestore:', err);
@@ -2261,26 +2342,68 @@ To use: copy this entire file into a .html file and open in a modern browser.
               unsubscribeDoc = userDocRef.onSnapshot((snapshot) => {
                 if (!snapshot.exists) return;
                 const remoteData = snapshot.data() || {};
+                const remoteLastSynced = remoteData.lastSyncedAt;
+                
+                // Skip if this snapshot is from our own write (we just saved this timestamp)
+                if (lastLocalSyncTimestamp && remoteLastSynced === lastLocalSyncTimestamp) {
+                  return;
+                }
+                
                 const remoteTasks = Array.isArray(remoteData.tasks) ? remoteData.tasks : [];
                 const remoteCategories = Array.isArray(remoteData.categories) ? remoteData.categories : defaultCategories.slice();
                 const remoteSettingsData = remoteData.settings || {};
-                // Merge remote changes with current local state
-                // This handles real-time updates from other devices
-                tasks = mergeListsById(remoteTasks, tasks);
-                categories = mergeListsById(remoteCategories, categories);
-                settings = Object.assign({}, settings, remoteSettingsData);
-                if (!settings.summaryTime) settings.summaryTime = '20:00';
-                if (!settings.theme) settings.theme = 'light';
-                saveTasks({ skipRemote: true });
-                saveCategories({ skipRemote: true });
-                saveSettings({ skipRemote: true });
-                document.body.classList.toggle('dark', settings.theme === 'dark');
-                renderToday();
-                renderAll();
-                renderCategoryView();
-                renderWeeklyReview();
-                renderCompletedView();
-                renderSettings();
+                
+                // Check if remote data is actually different from local
+                const localTasksStr = JSON.stringify(tasks.sort((a, b) => (a.id || '').localeCompare(b.id || '')));
+                const remoteTasksStr = JSON.stringify(remoteTasks.sort((a, b) => (a.id || '').localeCompare(b.id || '')));
+                
+                // Only process if remote data is different (from another device)
+                if (localTasksStr !== remoteTasksStr || 
+                    JSON.stringify(categories.sort((a, b) => (a.id || '').localeCompare(b.id || ''))) !== JSON.stringify(remoteCategories.sort((a, b) => (a.id || '').localeCompare(b.id || ''))) ||
+                    JSON.stringify(settings) !== JSON.stringify(remoteSettingsData)) {
+                  
+                  isApplyingRemoteUpdate = true;
+                  // Merge remote changes with current local state
+                  // This handles real-time updates from other devices
+                  // Use timestamp-based merge to keep the newest version of each item
+                  const mergedTasks = mergeListsById(remoteTasks, tasks);
+                  const mergedCategories = mergeListsById(remoteCategories, categories);
+                  const mergedSettings = Object.assign({}, settings, remoteSettingsData);
+                  
+                  // Only update if there are actual changes
+                  let hasChanges = false;
+                  if (JSON.stringify(tasks.sort((a, b) => (a.id || '').localeCompare(b.id || ''))) !== JSON.stringify(mergedTasks.sort((a, b) => (a.id || '').localeCompare(b.id || '')))) {
+                    tasks = mergedTasks;
+                    hasChanges = true;
+                  }
+                  if (JSON.stringify(categories.sort((a, b) => (a.id || '').localeCompare(b.id || ''))) !== JSON.stringify(mergedCategories.sort((a, b) => (a.id || '').localeCompare(b.id || '')))) {
+                    categories = mergedCategories;
+                    hasChanges = true;
+                  }
+                  if (JSON.stringify(settings) !== JSON.stringify(mergedSettings)) {
+                    settings = mergedSettings;
+                    hasChanges = true;
+                  }
+                  
+                  if (hasChanges) {
+                    if (!settings.summaryTime) settings.summaryTime = '20:00';
+                    if (!settings.theme) settings.theme = 'light';
+                    
+                    saveTasks({ skipRemote: true, skipBroadcast: true });
+                    saveCategories({ skipRemote: true });
+                    saveSettings({ skipRemote: true });
+                    
+                    document.body.classList.toggle('dark', settings.theme === 'dark');
+                    renderToday();
+                    renderAll();
+                    renderCategoryView();
+                    renderWeeklyReview();
+                    renderCompletedView();
+                    renderSettings();
+                  }
+                  
+                  isApplyingRemoteUpdate = false;
+                }
               });
               // Initial sync is already done above, so no need to schedule again
             } else {
